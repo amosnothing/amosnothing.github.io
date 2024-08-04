@@ -1,5 +1,6 @@
 ---
-title: Python函数（function）与方法（method）区别
+layout: post
+title: Python 函数（function）与 方法（method）区别
 date: 2017-08-10 18:07:46
 updated: 2017-08-10 18:07:46
 tags: ['python', '函数', '方法']

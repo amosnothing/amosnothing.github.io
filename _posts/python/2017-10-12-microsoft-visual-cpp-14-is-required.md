@@ -22,7 +22,7 @@ categories:
 
 点[这里](http://www.lfd.uci.edu/~gohlke/pythonlibs/)搜索您要下载的库。
 
-![这里写图片描述](assets/img/aHR0cDovL2ltZy5ibG9nLmNzZG4ubmV0LzIwMTgwMTI2MTk1MDE0ODQy.png)
+![图片](../../assets/img/aHR0cDovL2ltZy5ibG9nLmNzZG4ubmV0LzIwMTgwMTI2MTk1MDE0ODQy.png)
 
 {: .box-info}
 

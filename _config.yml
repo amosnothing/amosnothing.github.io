@@ -13,7 +13,9 @@
 title: 随笔
 
 # Your name to show in the footer
-author: 陈俊
+author: Amos Chen
+
+theme: minima
 
 ###############################################
 # --- List of links in the navigation bar --- #

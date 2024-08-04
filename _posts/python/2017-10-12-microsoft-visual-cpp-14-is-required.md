@@ -10,7 +10,7 @@ categories:
 
 # 背景
 
-安装pymssql， 执行命令pip install pymssql时出错：
+安装 `pymssql`， 执行命令pip install pymssql时出错：
 
 >error: Microsoft Visual C++ 14.0 is required. Get it with "Microsoft Visual C++ Build Tools": http://landinghub.visualstudio.com/visual-cpp-build-tools
 
@@ -22,7 +22,7 @@ categories:
 
 点[这里](http://www.lfd.uci.edu/~gohlke/pythonlibs/)搜索您要下载的库。
 
-![这里写图片描述](https://imgconvert.csdnimg.cn/aHR0cDovL2ltZy5ibG9nLmNzZG4ubmV0LzIwMTgwMTI2MTk1MDE0ODQy)
+![这里写图片描述](assets/img/aHR0cDovL2ltZy5ibG9nLmNzZG4ubmV0LzIwMTgwMTI2MTk1MDE0ODQy.png)
 
 {: .box-info}
 

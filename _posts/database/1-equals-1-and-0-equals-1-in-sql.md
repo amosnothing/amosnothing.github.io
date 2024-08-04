@@ -1,4 +1,5 @@
 ---
+layout: post
 title: sql where 1=1 和 0=1 的作用
 date: 2017-09-21 12:08:03
 tags: ['sql','where1-1','where0-1']

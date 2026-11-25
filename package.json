@@ -1,0 +1,18 @@
+{
+  "name": "ai-knowledge-base",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "docs:dev": "node scripts/prepare-site.mjs && vitepress dev",
+    "docs:build": "node scripts/prepare-site.mjs && vitepress build",
+    "docs:preview": "vitepress preview",
+    "test": "node --test tests/migration.test.mjs"
+  },
+  "devDependencies": {
+    "vitepress": "1.6.4",
+    "gray-matter": "4.0.3"
+  },
+  "overrides": {
+    "vite": "6.4.6"
+  }
+}

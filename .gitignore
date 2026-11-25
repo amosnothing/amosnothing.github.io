@@ -11,3 +11,10 @@ ehthumbs.db
 Gemfile.lock
 
 beautiful-jekyll-theme-*.gem
+
+# VitePress
+node_modules/
+.vitepress/cache/
+.vitepress/dist/
+.vitepress/content/
+.vitepress/navigation.json

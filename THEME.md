@@ -1,36 +1,38 @@
-# 官方主题维护
+# VitePress 官方默认主题
 
-本站直接使用 [Just the Docs 官方主题](https://just-the-docs.github.io/just-the-docs/)，固定版本 `v0.12.0`。主题布局、字体、宽度、颜色、表格和搜索代码均使用上游原版，不添加本地 CSS、JavaScript 或主题模板覆盖。
+本站使用 VitePress 1.6.4 稳定版的官方默认主题。没有 `.vitepress/theme`、自定义 CSS 或 Vue 组件。首页使用官方 `home`、`hero`、`features` 配置；导航、页内目录、深浅色切换和本地搜索使用官方功能。中文搜索使用上游默认分词；部分中文短词可能无法单独匹配，可尝试完整词语或英文术语。
 
-## 配置与内容
+## 内容维护
 
-- `_config.yml` 使用 `remote_theme` 加载官方主题，仅配置站点信息、导航、搜索开关和文档布局范围。
-- 默认布局仅应用于 `ai-knowledge-base` 文档目录，避免 CSS 等资源被包成 HTML。
-- 模块和文章使用官方 `parent`、`grand_parent`、`nav_order` 建立导航。
-- 文章使用[官方页内目录写法](https://just-the-docs.github.io/just-the-docs/docs/navigation/in-page/)生成可折叠目录。
-- `index.html` 是普通首页内容列表，使用官方 `default` 布局；原随笔分页与链接保留。
-- 搜索使用官方 Lunr 实现，不额外增加中文分词。中文检索效果受上游默认分词能力限制。
-- 旧 Beautiful Jekyll 模板保存在 `_legacy/beautiful-jekyll/`，已排除构建，不会覆盖官方主题。
+- AI 文档仍以 `ai-knowledge-base/` 为唯一内容来源，目录和文章文件名保留。
+- 已发布随笔仍以 `_posts/` 中日期文件名的 Markdown 为来源；未使用日期文件名的稿件保持未发布。
+- `scripts/prepare-site.mjs` 在构建前生成 `.vitepress/content/` 与导航数据，不要手工编辑生成目录。原始文档不被改写。
+- 转换原 Jekyll 链接与目录语法；页内目录由 VitePress 默认主题生成。
+- 兼容既有文章 URL、`aboutme/`、`tags/`、`page2/` 至 `page4/` 和 RSS 地址。随笔日期按原 Jekyll 的 UTC 元数据及 Asia/Shanghai 站点时区生成。
+- 原 Jekyll 配置、首页、标签页、依赖和测试保存在 `_legacy/jekyll/`；Beautiful Jekyll 模板仍保存在原归档中，仅供追溯，不参加构建。
 
-## 本地运行
+## 本地运行与验证
 
-使用 Ruby 3.3 和 Bundler：
-
-```sh
-bundle install
-bundle exec jekyll serve
-```
-
-验证命令：
+需要 Node.js 22：
 
 ```sh
-bundle exec jekyll build --future --strict_front_matter
-python3 tests/check_docs.py _site
-node tests/check_search.cjs _site
+npm ci
+npm run docs:dev
+npm run docs:build
+npm test
+npm run docs:preview
 ```
 
-CI 同时验证 Jekyll 3.10.0 和 4.4.1。可用 `JEKYLL_VERSION=3.10.0` 选择兼容版本，并在切换版本后重新执行 `bundle install`。`rake` 是远程主题声明的运行依赖，需显式保留。
+VitePress 是静态站点生成器；`gray-matter` 用于解析现有 Markdown 的 YAML 元数据。提交 `package-lock.json` 固定依赖。VitePress 1.6.4 的默认 Vite 5 依赖存在开发服务器安全公告，因此以 npm overrides 固定为已修复的 Vite 6.4.6；不涉及主题改动，构建与回归检查必须保持通过。
 
 ## GitHub Pages
 
-保留现有 Pages 发布来源。当前工作流进行构建与回归检查，不新增发布渠道；使用分支发布时由 GitHub Pages 构建远程主题。升级主题版本前，应检查官方变更说明并重新构建、预览。
+在仓库 Settings → Pages 中选择 GitHub Actions 为发布来源。`.github/workflows/ci.yml` 在 main 推送后安装依赖、构建、执行回归检查，再发布 `.vitepress/dist`。Pull request 只验证，不发布。
+
+官方文档：
+
+- https://vitepress.dev/reference/default-theme-home-page
+- https://vitepress.dev/reference/default-theme-config
+- https://vitepress.dev/guide/deploy
+
+升级前需重新检查构建、旧链接、搜索、桌面及移动端。历史文章的外部图片或链接可能因原站点变化而失效；迁移不保证外部资源可用。

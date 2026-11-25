@@ -1,25 +1,40 @@
-name: Jekyll documentation checks
-on: [push, pull_request]
+name: VitePress Pages
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   build:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        jekyll: ['3.10.0', '4.4.1']
-    env:
-      JEKYLL_VERSION: ${{ matrix.jekyll }}
     steps:
       - uses: actions/checkout@v4
-      - uses: ruby/setup-ruby@v1
+      - uses: actions/setup-node@v4
         with:
-          ruby-version: '3.3'
-          bundler-cache: true
-          cache-version: jekyll-${{ matrix.jekyll }}
-      - name: Build site
-        run: bundle exec jekyll build --future --strict_front_matter
-      - name: Check documentation output
-        run: python3 tests/check_docs.py _site
-      - name: Check official theme search
-        run: node tests/check_search.cjs _site
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run docs:build
+      - run: npm test
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .vitepress/dist
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

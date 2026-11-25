@@ -1,0 +1,7 @@
+---
+layout: vendor/compress
+---
+
+{% assign wrapped = content | replace: '<table', '<div class="table-wrapper" tabindex="0" role="region" aria-label="表格，可横向滚动"><table' %}
+{% assign wrapped = wrapped | replace: '</table>', '</table></div>' | replace: '<th>', '<th scope="col">' %}
+{{ wrapped }}

@@ -3,11 +3,22 @@ title: 推理模型（Reasoning Models）：慢思考与复杂逻辑推演
 category: 前沿能力演进（2026最新进展）
 updated_at: 2026-11-25
 level: 通识进阶
+parent: 前沿能力演进（2026最新进展）
+grand_parent: AI 知识库
+nav_order: 1
 ---
 
 # 推理模型（Reasoning Models）：慢思考与复杂逻辑推演
 
 > **核心摘要**：推理模型是经过专门训练、能够在复杂任务中投入更多处理步骤来形成答案的大模型。“慢思考”的价值在于分解问题、比较路径和检查约束，但它不保证前提真实，也不保证每次结论正确。
+
+<details open markdown="block" class="article-toc">
+<summary>本文目录</summary>
+
+1. TOC
+{:toc}
+
+</details>
 
 ## 1. 概念解析与生活类比
 

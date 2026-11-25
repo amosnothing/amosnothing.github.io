@@ -3,11 +3,22 @@ title: 大模型幻觉（Hallucination）：成因分析与应对策略
 category: 核心原理与基础概念
 updated_at: 2026-11-25
 level: 通识进阶
+parent: 核心原理与基础概念
+grand_parent: AI 知识库
+nav_order: 3
 ---
 
 # 大模型幻觉（Hallucination）：成因分析与应对策略
 
 > **核心摘要**：大模型幻觉是指模型生成了看似可信、实际上错误或缺乏依据的内容。应对它的关键是为回答提供可核查证据、允许表达不确定性，并按错误后果安排复核。
+
+<details open markdown="block" class="article-toc">
+<summary>本文目录</summary>
+
+1. TOC
+{:toc}
+
+</details>
 
 ## 1. 概念解析与生活类比
 

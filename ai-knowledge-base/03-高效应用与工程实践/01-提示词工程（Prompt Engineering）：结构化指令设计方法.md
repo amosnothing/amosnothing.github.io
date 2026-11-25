@@ -3,11 +3,22 @@ title: 提示词工程（Prompt Engineering）：结构化指令设计方法
 category: 高效应用与工程实践
 updated_at: 2026-11-25
 level: 通识进阶
+parent: 高效应用与工程实践
+grand_parent: AI 知识库
+nav_order: 1
 ---
 
 # 提示词工程（Prompt Engineering）：结构化指令设计方法
 
 > **核心摘要**：提示词工程是围绕目标、背景、约束和验收标准设计模型指令，并通过实际任务迭代改进的方法。它的核心价值是减少协作歧义，使输出更符合需要，而不是用特定措辞获得绝对正确的答案。
+
+<details open markdown="block" class="article-toc">
+<summary>本文目录</summary>
+
+1. TOC
+{:toc}
+
+</details>
 
 ## 1. 概念解析与生活类比
 

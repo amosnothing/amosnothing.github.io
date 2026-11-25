@@ -3,11 +3,22 @@ title: 上下文窗口（Context Window）：AI的短期工作记忆边界
 category: 核心原理与基础概念
 updated_at: 2026-11-25
 level: 通识进阶
+parent: 核心原理与基础概念
+grand_parent: AI 知识库
+nav_order: 2
 ---
 
 # 上下文窗口（Context Window）：AI的短期工作记忆边界
 
 > **核心摘要**：上下文窗口是模型一次处理任务时能够纳入的有限信息范围，通常用 Token 衡量。它影响模型能同时参考多少资料，但容量增加并不保证模型能完整、准确地利用其中每一条信息。
+
+<details open markdown="block" class="article-toc">
+<summary>本文目录</summary>
+
+1. TOC
+{:toc}
+
+</details>
 
 ## 1. 概念解析与生活类比
 

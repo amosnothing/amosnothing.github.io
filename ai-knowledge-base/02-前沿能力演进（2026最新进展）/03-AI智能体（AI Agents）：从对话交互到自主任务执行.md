@@ -3,11 +3,22 @@ title: AI智能体（AI Agents）：从对话交互到自主任务执行
 category: 前沿能力演进（2026最新进展）
 updated_at: 2026-11-25
 level: 通识进阶
+parent: 前沿能力演进（2026最新进展）
+grand_parent: AI 知识库
+nav_order: 3
 ---
 
 # AI智能体（AI Agents）：从对话交互到自主任务执行
 
 > **核心摘要**：AI 智能体是围绕用户目标，自主选择部分步骤、调用工具并根据反馈继续行动的系统。它把大模型从提供建议扩展为执行任务，但可靠交付仍依赖权限、停止条件、过程记录与人工监督。
+
+<details open markdown="block" class="article-toc">
+<summary>本文目录</summary>
+
+1. TOC
+{:toc}
+
+</details>
 
 ## 1. 概念解析与生活类比
 

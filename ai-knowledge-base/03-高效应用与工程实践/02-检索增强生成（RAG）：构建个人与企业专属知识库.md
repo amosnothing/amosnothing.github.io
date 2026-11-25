@@ -3,11 +3,22 @@ title: 检索增强生成（RAG）：构建个人与企业专属知识库
 category: 高效应用与工程实践
 updated_at: 2026-11-25
 level: 通识进阶
+parent: 高效应用与工程实践
+grand_parent: AI 知识库
+nav_order: 2
 ---
 
 # 检索增强生成（RAG）：构建个人与企业专属知识库
 
 > **核心摘要**：检索增强生成是在回答前从外部资料中检索相关内容，再将这些内容提供给模型生成答案的方法。它有助于利用个人或企业知识，并保留核查依据，但效果同时取决于资料治理、检索质量和生成过程。
+
+<details open markdown="block" class="article-toc">
+<summary>本文目录</summary>
+
+1. TOC
+{:toc}
+
+</details>
 
 ## 1. 概念解析与生活类比
 

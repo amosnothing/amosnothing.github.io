@@ -100,3 +100,33 @@ test('AI document emphasis renders as strong text, including CJK parenthesis bou
   }
   assert.ok(terms > 50, 'Verify emphasis across the knowledge base');
 });
+
+test('weekly news uses one Monday-named file per week and appears in navigation and output', async () => {
+  const matter = (await import('gray-matter')).default;
+  const reports = (await files(path.join(root, 'ai-weekly'))).filter(f => f.endsWith('.md'));
+  const weeks = new Set();
+  const archive = await read('ai-weekly/index.html');
+  const home = await read('index.html');
+  for (const file of reports) {
+    const name = path.basename(file, '.md');
+    assert.match(name, /^\d{4}-\d{2}-\d{2}$/);
+    assert.equal(new Date(`${name}T00:00:00Z`).getUTCDay(), 1);
+    assert.ok(!weeks.has(name), `Duplicate weekly report: ${name}`);
+    weeks.add(name);
+    const source = matter(await readFile(file, 'utf8'));
+    assert.equal(new Date(source.data.week_start).toISOString().slice(0, 10), name);
+    assert.equal(new Date(source.data.week_end) - new Date(source.data.week_start), 6 * 86400000);
+    assert.ok(new Date(source.data.updated_at) >= new Date(source.data.week_start));
+    const link = `/ai-weekly/${name}/`;
+    const html = await read(`ai-weekly/${name}/index.html`);
+    assert.ok(archive.includes(link) && html.includes('周报归档'), name);
+    assert.ok(home.includes('/ai-weekly/'));
+    assert.ok(html.includes('新闻概览') && html.includes('原文') && html.includes('参考来源'), name);
+    const urls = [...source.content.matchAll(/\[\[\d+\]\]\((https:\/\/[^)]+)\)/g)].map(m => m[1]);
+    assert.ok(urls.length > 0, name);
+    for (const url of urls) assert.ok(html.includes(url), `${name}: ${url}`);
+  }
+  const first = await read('ai-weekly/2026-11-23/index.html');
+  for (const topic of ['蛋白质设计', 'Claude Ship', 'Working with AI', '量子算法', 'Shirudo', 'RoboTrack']) assert.ok(first.includes(topic), topic);
+  assert.equal((first.match(/<h2 id="_[1-6]-/g) || []).length, 6);
+});

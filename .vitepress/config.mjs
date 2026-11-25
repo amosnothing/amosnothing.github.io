@@ -13,11 +13,13 @@ export default defineConfig({
     nav: [
       { text: '首页', link: '/' },
       { text: 'AI 知识库', link: '/ai-knowledge-base/' },
+      { text: 'AI 资讯周报', link: '/ai-weekly/' },
       { text: '随笔', link: '/blog/' },
       { text: '关于我', link: '/aboutme/' },
     ],
     sidebar: {
       '/ai-knowledge-base/': [{ text: '知识库概览', link: '/ai-knowledge-base/' }, ...navigation.groups],
+      '/ai-weekly/': [{ text: '周报归档', link: '/ai-weekly/' }, ...navigation.weekly],
       '/blog/': [{ text: '全部随笔', link: '/blog/' }, ...navigation.posts.map(({ text, link }) => ({ text, link }))],
       ...Object.fromEntries(navigation.posts.map(p => [p.link, [{ text: '全部随笔', link: '/blog/' }]])),
     },

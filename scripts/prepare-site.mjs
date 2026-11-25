@@ -59,6 +59,19 @@ export async function prepare() {
   }
   const aiIndex = matter(await readFile(path.join(root, 'ai-knowledge-base/index.md'), 'utf8'));
   await write('ai-knowledge-base/index.md', page(aiIndex.data.title, convertContent(aiIndex.content)));
+  const weekly = [];
+  for (const filename of (await files(path.join(root, 'ai-weekly'))).filter(f => f.endsWith('.md')).reverse()) {
+    const name = path.basename(filename, '.md');
+    const start = new Date(`${name}T00:00:00Z`);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(name) || Number.isNaN(start.getTime()) || start.toISOString().slice(0, 10) !== name || start.getUTCDay() !== 1) {
+      throw new Error(`Weekly report filename must be its Monday date: ${filename}`);
+    }
+    const source = matter(await readFile(filename, 'utf8'));
+    const link = `/ai-weekly/${name}/`;
+    weekly.push({ text: source.data.title, link });
+    await write(`ai-weekly/${name}/index.md`, matter.stringify(source.content, source.data));
+  }
+  await write('ai-weekly/index.md', page('AI 资讯周报', '# AI 资讯周报\n\n每个自然周（周一至周日）只维护一个 Markdown 文件，以周一日期命名；同周消息追加到原文件。优先收录官方公告与原始研究，逐条提供发布日期、新闻概览及原文链接。\n\n' + weekly.map(item => `- [${item.text}](${item.link})`).join('\n')));
   const posts = [];
   for (const filename of (await files(path.join(root, '_posts'))).filter(f => /^\d{4}-\d{2}-\d{2}-.+\.md$/.test(path.basename(f)))) {
     const source = matter(await readFile(filename, 'utf8'));
@@ -96,7 +109,7 @@ export async function prepare() {
   await write('public/.nojekyll', '');
   await write('public/robots.txt', `User-agent: *\nAllow: /\nSitemap: ${origin}/sitemap.xml\n`);
   await write('public/feed.xml', `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>随笔与 AI 知识库</title><link>${origin}</link><description>技术随笔</description>${posts.map(p => `<item><title>${xml(p.text)}</title><link>${origin}${p.link}</link><guid>${origin}${p.link}</guid><pubDate>${new Date(p.date).toUTCString()}</pubDate></item>`).join('')}</channel></rss>`);
-  await writeFile(path.join(root, '.vitepress/navigation.json'), JSON.stringify({ groups, posts }, null, 2) + '\n');
+  await writeFile(path.join(root, '.vitepress/navigation.json'), JSON.stringify({ groups, posts, weekly }, null, 2) + '\n');
   console.log(`Prepared ${groups.reduce((n, g) => n + g.items.length, 0)} AI articles and ${posts.length} published posts.`);
 }
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await prepare();

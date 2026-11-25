@@ -77,3 +77,10 @@ test('the generated official local-search index finds document topics', async ()
     assert.ok(index.search(query, { prefix: true, fuzzy: 0.2 }).slice(0, 10).some(r => r.id.includes(expected)), query);
   }
 });
+
+test('CI dependency downloads use the public npm registry', async () => {
+  const lock = JSON.parse(await readFile(path.join(root, 'package-lock.json'), 'utf8'));
+  for (const [name, item] of Object.entries(lock.packages)) {
+    if (item.resolved) assert.equal(new URL(item.resolved).hostname, 'registry.npmjs.org', name);
+  }
+});

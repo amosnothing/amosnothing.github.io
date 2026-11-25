@@ -21,6 +21,7 @@ author: Amos Chen
 
 navbar-links:
   About Me: "aboutme"
+  AI 知识库: "/ai-knowledge-base/"
 
 ################
 # --- Logo --- #

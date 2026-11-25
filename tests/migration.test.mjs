@@ -84,3 +84,19 @@ test('CI dependency downloads use the public npm registry', async () => {
     if (item.resolved) assert.equal(new URL(item.resolved).hostname, 'registry.npmjs.org', name);
   }
 });
+
+test('AI document emphasis renders as strong text, including CJK parenthesis boundaries', async () => {
+  const articles = (await files(path.join(root, 'ai-knowledge-base'))).filter(f => f.endsWith('.md'));
+  let terms = 0;
+  for (const file of articles) {
+    const relative = path.relative(root, file).replace(/\.md$/, file.endsWith('/index.md') ? '.html' : '/index.html');
+    const html = await read(relative);
+    const source = await readFile(file, 'utf8');
+    for (const [, term] of source.matchAll(/\*\*([^*\n]+)\*\*/g)) {
+      const escaped = term.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
+      assert.ok(html.includes(`<strong>${escaped}</strong>`), `${relative}: ${term}`);
+      terms++;
+    }
+  }
+  assert.ok(terms > 50, 'Verify emphasis across the knowledge base');
+});

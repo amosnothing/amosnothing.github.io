@@ -9,10 +9,6 @@ baseurl: ""
 lang: zh-CN
 timezone: Asia/Shanghai
 
-# Keep the previous theme files for rollback, without overriding the new theme.
-layouts_dir: _layouts_docs
-includes_dir: _includes_docs
-
 markdown: kramdown
 highlighter: rouge
 permalink: /:year-:month-:day-:title/
@@ -48,8 +44,10 @@ social-network-links:
   github: amosnothing
 
 defaults:
+  # Layout defaults apply to documents only; theme CSS/JS must stay raw assets.
   - scope:
-      path: ""
+      path: ai-knowledge-base
+      type: pages
     values:
       layout: default
       has_toc: false
@@ -92,6 +90,7 @@ exclude:
   - beautiful-jekyll-theme.gemspec
   - docs/
   - tests/
+  - _legacy/
 
 plugins:
   - jekyll-remote-theme

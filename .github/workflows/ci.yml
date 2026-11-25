@@ -5,15 +5,21 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        jekyll: ['3.10.0', '4.4.1']
+    env:
+      JEKYLL_VERSION: ${{ matrix.jekyll }}
     steps:
       - uses: actions/checkout@v4
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.3'
           bundler-cache: true
+          cache-version: jekyll-${{ matrix.jekyll }}
       - name: Build site
         run: bundle exec jekyll build --future --strict_front_matter
       - name: Check documentation output
         run: python3 tests/check_docs.py _site
-      - name: Check Chinese and English search
+      - name: Check official theme search
         run: node tests/check_search.cjs _site

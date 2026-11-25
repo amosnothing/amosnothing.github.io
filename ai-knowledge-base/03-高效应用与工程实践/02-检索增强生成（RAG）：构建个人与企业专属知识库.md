@@ -12,7 +12,7 @@ nav_order: 2
 
 > **核心摘要**：检索增强生成是在回答前从外部资料中检索相关内容，再将这些内容提供给模型生成答案的方法。它有助于利用个人或企业知识，并保留核查依据，但效果同时取决于资料治理、检索质量和生成过程。
 
-<details open markdown="block" class="article-toc">
+<details open markdown="block">
 <summary>本文目录</summary>
 
 1. TOC

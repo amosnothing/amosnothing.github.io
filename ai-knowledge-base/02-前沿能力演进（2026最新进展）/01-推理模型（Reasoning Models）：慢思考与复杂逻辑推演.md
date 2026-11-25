@@ -12,7 +12,7 @@ nav_order: 1
 
 > **核心摘要**：推理模型是经过专门训练、能够在复杂任务中投入更多处理步骤来形成答案的大模型。“慢思考”的价值在于分解问题、比较路径和检查约束，但它不保证前提真实，也不保证每次结论正确。
 
-<details open markdown="block" class="article-toc">
+<details open markdown="block">
 <summary>本文目录</summary>
 
 1. TOC

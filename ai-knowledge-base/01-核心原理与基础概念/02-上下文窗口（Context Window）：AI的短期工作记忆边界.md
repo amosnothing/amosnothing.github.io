@@ -12,7 +12,7 @@ nav_order: 2
 
 > **核心摘要**：上下文窗口是模型一次处理任务时能够纳入的有限信息范围，通常用 Token 衡量。它影响模型能同时参考多少资料，但容量增加并不保证模型能完整、准确地利用其中每一条信息。
 
-<details open markdown="block" class="article-toc">
+<details open markdown="block">
 <summary>本文目录</summary>
 
 1. TOC

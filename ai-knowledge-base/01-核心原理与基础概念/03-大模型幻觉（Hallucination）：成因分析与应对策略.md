@@ -12,7 +12,7 @@ nav_order: 3
 
 > **核心摘要**：大模型幻觉是指模型生成了看似可信、实际上错误或缺乏依据的内容。应对它的关键是为回答提供可核查证据、允许表达不确定性，并按错误后果安排复核。
 
-<details open markdown="block" class="article-toc">
+<details open markdown="block">
 <summary>本文目录</summary>
 
 1. TOC

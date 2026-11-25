@@ -12,7 +12,7 @@ nav_order: 3
 
 > **核心摘要**：AI 智能体是围绕用户目标，自主选择部分步骤、调用工具并根据反馈继续行动的系统。它把大模型从提供建议扩展为执行任务，但可靠交付仍依赖权限、停止条件、过程记录与人工监督。
 
-<details open markdown="block" class="article-toc">
+<details open markdown="block">
 <summary>本文目录</summary>
 
 1. TOC

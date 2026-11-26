@@ -79,7 +79,7 @@ test('the generated official local-search index finds document topics', async ()
   const asset = (await files(path.join(dist, 'assets'))).find(f => f.includes('@localSearchIndexroot'));
   const data = (await import(pathToFileURL(asset))).default;
   const index = MiniSearch.loadJSON(data, { fields: ['title', 'titles', 'text'], storeFields: ['title', 'titles'] });
-  for (const [query, expected] of [['RAG', '/practice/rag/'], ['上下文', '/fundamentals/context-window/'], ['Reasoning', '/frontiers/reasoning-models/'], ['TestGen', '/ai-software/quality-engineering/'], ['Rakuten', '/ai-software/enterprise-adoption/']]) {
+  for (const [query, expected] of [['RAG', '/practice/rag/'], ['上下文', '/fundamentals/context-window/'], ['Reasoning', '/frontiers/reasoning-models/'], ['TestGen', '/ai-software/quality-engineering/'], ['NL2Test', '/ai-software/bytedance-testing/']]) {
     assert.ok(index.search(query, { prefix: true, fuzzy: 0.2 }).slice(0, 10).some(r => r.id.includes(expected)), query);
   }
 });
@@ -187,9 +187,10 @@ test('legacy redirects preserve query and fragment and reject unsafe targets', a
 test('software engineering articles have sources, standard sections and short English navigation', async () => {
   const matter = (await import('gray-matter')).default;
   const articles = (await files(path.join(root, 'ai-software'))).filter(file => file.endsWith('.md') && !file.endsWith('/index.md'));
-  assert.equal(articles.length, 4);
+  assert.equal(articles.length, 6);
   assert.deepEqual(navigation.software.map(item => item.link), [
     '/ai-software/coding-agents/', '/ai-software/context-and-multi-agent/', '/ai-software/quality-engineering/', '/ai-software/enterprise-adoption/',
+    '/ai-software/alibaba-rd-practice/', '/ai-software/bytedance-testing/',
   ]);
   const index = await read('ai-software/index.html');
   for (const file of articles) {
@@ -206,9 +207,42 @@ test('software engineering articles have sources, standard sections and short En
     assert.ok(html.includes(data.title), link);
     assert.ok(!/^```/m.test(content), 'Articles must not require code');
     const sources = [...content.matchAll(/\[\[(\d+)\]\]\((https:\/\/[^)]+)\)/g)];
-    assert.ok(new Set(sources.map(match => match[1])).size >= 3, link);
+    assert.ok(new Set(sources.map(match => match[1])).size >= (data.reviewed_sources ? 1 : 3), link);
+    const references = [...content.matchAll(/^- \[(\d+)\] \[[^\n]+?\]\((https:\/\/[^)]+)\)/gm)];
+    assert.deepEqual(new Map(sources.map(([, n, url]) => [n, url])), new Map(references.map(([, n, url]) => [n, url])), `Citation/reference mismatch: ${link}`);
     for (const [, , url] of sources) assert.ok(html.includes(url), url);
   }
   assert.ok((await read('index.html')).includes('/ai-software/'));
   assert.ok((await read('sitemap.xml')).includes('/ai-software/enterprise-adoption/'));
+});
+
+
+test('reviewed enterprise cases use dated primary evidence within a six-month window', async () => {
+  const matter = (await import('gray-matter')).default;
+  const expected = ['enterprise-adoption', 'alibaba-rd-practice', 'bytedance-testing'];
+  const allowed = new Set(['blog.qoder.com', 'www.toutiao.com', 'arxiv.org']);
+  for (const name of expected) {
+    const { data, content } = matter(await readFile(path.join(root, `ai-software/${name}.md`), 'utf8'));
+    const start = new Date(data.source_window_start);
+    const end = new Date(data.source_window_end);
+    const earliest = new Date(end);
+    earliest.setUTCMonth(earliest.getUTCMonth() - 6);
+    assert.ok(Number.isFinite(+start) && Number.isFinite(+end) && start >= earliest && start <= end, name);
+    assert.equal(+new Date(data.reviewed_at), +end, name);
+    assert.equal(+new Date(data.updated_at), +end, name);
+    assert.ok(data.evidence_type && data.reviewed_sources?.length, name);
+    const cited = new Set([...content.matchAll(/\[\[\d+\]\]\((https:\/\/[^)]+)\)/g)].map(m => m[1]));
+    assert.deepEqual(cited, new Set(data.reviewed_sources.map(s => s.url)), name);
+    for (const source of data.reviewed_sources) {
+      const date = new Date(source.published_at);
+      assert.ok(Number.isFinite(+date) && date >= start && date <= end, `${name}: ${source.url}`);
+      assert.ok(source.publisher && allowed.has(new URL(source.url).hostname), source.url);
+    }
+  }
+  const overview = await read('ai-software/enterprise-adoption/index.html');
+  for (const stale of ['arxiv.org/abs/2402.09171', 'openai.com/index/rakuten/', 'github-copilots-impact-in-the-enterprise-with-accenture']) assert.ok(!overview.includes(stale), stale);
+  assert.ok(overview.includes('暂不新增腾讯案例文章'));
+  const bytedance = await read('ai-software/bytedance-testing/index.html');
+  for (const qualification of ['允许少量后续修改', '2025 年 3 月', '不代表缺陷检出率']) assert.ok(bytedance.includes(qualification), qualification);
+  assert.ok((await read('ai-software/alibaba-rd-practice/index.html')).includes('全流程操作明确以演示呈现'));
 });

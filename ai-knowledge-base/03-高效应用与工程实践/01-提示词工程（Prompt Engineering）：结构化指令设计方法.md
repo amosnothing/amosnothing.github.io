@@ -6,6 +6,8 @@ level: 通识进阶
 parent: 高效应用与工程实践
 grand_parent: AI 知识库
 nav_order: 1
+slug: prompt-engineering
+sidebar_title: 提示词工程
 ---
 
 # 提示词工程（Prompt Engineering）：结构化指令设计方法

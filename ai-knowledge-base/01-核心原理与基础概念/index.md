@@ -4,6 +4,8 @@ title: 核心原理与基础概念
 parent: AI 知识库
 nav_order: 1
 has_toc: true
+slug: fundamentals
+sidebar_title: 基础概念
 ---
 
 # 核心原理与基础概念

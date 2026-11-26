@@ -2,10 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile, access } from 'node:fs/promises';
 import path from 'node:path';
-import { files, postRoute, convertContent, weeklyFileStem } from '../scripts/prepare-site.mjs';
+import { files, postRoute, convertContent, weeklyFileStem, redirectHtml } from '../scripts/prepare-site.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const dist = path.join(root, '.vitepress/dist');
+const navigation = JSON.parse(await readFile(path.join(root, '.vitepress/navigation.json'), 'utf8'));
+const renderedDocument = file => navigation.documentRoutes[path.relative(root, file)].slice(1) + 'index.html';
 const read = relative => readFile(path.join(dist, relative), 'utf8');
 const exists = async p => { try { await access(p); return true; } catch (error) { if (error.code === 'ENOENT') return false; throw error; } };
 
@@ -30,7 +32,7 @@ test('11 AI articles retain sources and five sections, using the official theme 
   const articles = (await files(source)).filter(f => f.endsWith('.md') && !f.endsWith('/index.md'));
   assert.equal(articles.length, 11);
   for (const file of articles) {
-    const relative = path.relative(root, file).replace(/\.md$/, '/index.html');
+    const relative = renderedDocument(file);
     const html = await read(relative);
     assert.ok(html.includes('参考来源') && html.includes('核心摘要'), relative);
     for (const section of ['概念解析与生活类比', '核心价值与应用场景', '最新演进与代表性实践', '常见认知误区与使用边界']) assert.ok(html.includes(section), `${relative}: ${section}`);
@@ -73,7 +75,7 @@ test('the generated official local-search index finds document topics', async ()
   const asset = (await files(path.join(dist, 'assets'))).find(f => f.includes('@localSearchIndexroot'));
   const data = (await import(pathToFileURL(asset))).default;
   const index = MiniSearch.loadJSON(data, { fields: ['title', 'titles', 'text'], storeFields: ['title', 'titles'] });
-  for (const [query, expected] of [['RAG', '检索增强生成'], ['上下文', '上下文窗口'], ['Reasoning', '推理模型']]) {
+  for (const [query, expected] of [['RAG', '/practice/rag/'], ['上下文', '/fundamentals/context-window/'], ['Reasoning', '/frontiers/reasoning-models/']]) {
     assert.ok(index.search(query, { prefix: true, fuzzy: 0.2 }).slice(0, 10).some(r => r.id.includes(expected)), query);
   }
 });
@@ -89,7 +91,7 @@ test('AI document emphasis renders as strong text, including CJK parenthesis bou
   const articles = (await files(path.join(root, 'ai-knowledge-base'))).filter(f => f.endsWith('.md'));
   let terms = 0;
   for (const file of articles) {
-    const relative = path.relative(root, file).replace(/\.md$/, file.endsWith('/index.md') ? '.html' : '/index.html');
+    const relative = renderedDocument(file);
     const html = await read(relative);
     const source = await readFile(file, 'utf8');
     for (const [, term] of source.matchAll(/\*\*([^*\n]+)\*\*/g)) {
@@ -139,4 +141,40 @@ test('ISO weekly filenames handle year boundaries and two-digit weeks', () => {
   assert.equal(weeklyFileStem('2021-01-04'), '2021-week01');
   assert.throws(() => weeklyFileStem('2026-11-26'), /Monday/);
   assert.throws(() => weeklyFileStem('invalid'), /Monday/);
+});
+
+
+test('English routes, short sidebar labels and full document headings remain consistent', async () => {
+  assert.equal(navigation.groups.length, 4);
+  for (const group of navigation.groups) {
+    assert.ok(group.text.length <= 6, group.text);
+    assert.match(group.link, /^\/ai-knowledge-base\/[a-z-]+\/$/);
+    for (const item of group.items) {
+      assert.ok(item.text.length <= 10, item.text);
+      assert.match(item.link, /^\/ai-knowledge-base\/[a-z-]+\/[a-z-]+\/$/);
+    }
+  }
+  const html = await read('ai-knowledge-base/fundamentals/context-window/index.html');
+  assert.ok(html.includes('上下文窗口（Context Window）：AI的短期工作记忆边界'));
+  assert.ok(html.includes('href="/ai-knowledge-base/fundamentals/context-window/"'));
+  for (const [oldRoute, target] of Object.entries(navigation.legacyRoutes)) {
+    const legacy = await read(oldRoute.slice(1) + 'index.html');
+    assert.ok(legacy.includes(`rel="canonical" href="https://amosnothing.github.io${target}"`));
+    assert.ok(legacy.includes(`content="0;url=${target}"`));
+    assert.ok(legacy.includes('location.search + location.hash'));
+  }
+  const sitemap = await read('sitemap.xml');
+  assert.ok(sitemap.includes('/fundamentals/context-window/'));
+  for (const route of Object.keys(navigation.legacyRoutes)) assert.ok(!sitemap.includes(encodeURI(route)));
+});
+
+test('legacy redirects preserve query and fragment and reject unsafe targets', async () => {
+  const { runInNewContext } = await import('node:vm');
+  const html = redirectHtml('/ai-knowledge-base/fundamentals/context-window/');
+  const script = html.match(/<script>(.*?)<\/script>/s)[1];
+  let destination;
+  runInNewContext(script, { location: { search: '?from=bookmark', hash: '#section', replace(value) { destination = value; } } });
+  assert.equal(destination, '/ai-knowledge-base/fundamentals/context-window/?from=bookmark#section');
+  assert.throws(() => redirectHtml('https://example.com/'), /Invalid redirect/);
+  assert.throws(() => redirectHtml('/ai-knowledge-base/<script>/'), /Invalid redirect/);
 });

@@ -6,6 +6,8 @@ level: 通识进阶
 parent: 前沿能力演进（2026最新进展）
 grand_parent: AI 知识库
 nav_order: 3
+slug: ai-agents
+sidebar_title: AI 智能体
 ---
 
 # AI智能体（AI Agents）：从对话交互到自主任务执行

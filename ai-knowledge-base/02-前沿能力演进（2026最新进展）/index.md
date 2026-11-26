@@ -4,6 +4,8 @@ title: 前沿能力演进（2026最新进展）
 parent: AI 知识库
 nav_order: 2
 has_toc: true
+slug: frontiers
+sidebar_title: 前沿能力
 ---
 
 # 前沿能力演进（2026最新进展）

@@ -4,6 +4,8 @@ title: 高效应用与工程实践
 parent: AI 知识库
 nav_order: 3
 has_toc: true
+slug: practice
+sidebar_title: 应用实践
 ---
 
 # 高效应用与工程实践

@@ -27,10 +27,10 @@ export function weeklyFileStem(value) {
   const week = Math.ceil(((thursday - Date.UTC(year, 0, 1)) / 86400000 + 1) / 7);
   return `${year}-week${String(week).padStart(2, '0')}`;
 }
-export function convertContent(content) {
+export function convertContent(content, documentRoutes = {}) {
   return content
     .replace(/\{% capture article_url %\}\{% link (.*?) %\}\{% endcapture %\}\s*\n- \[(.*?)\]\(\{\{ article_url \| uri_escape \}\}\)/g,
-      (_, target, title) => `- [${title}](${encodeURI('/' + target.replace(/\.md$/, '/'))})`)
+      (_, target, title) => `- [${title}](${encodeURI(documentRoutes[target] || '/' + target.replace(/\.md$/, '/'))})`)
     .replace(/<details open markdown="block">\s*<summary>本文目录<\/summary>\s*1\. TOC\s*\{:toc\}\s*<\/details>/g, '')
     .replace(/^\{:.*?\}\s*$/gm, '')
     .replace(/<function ([^>]+)>/g, '&lt;function $1&gt;')
@@ -44,32 +44,61 @@ async function write(relative, text) {
   await mkdir(path.dirname(target), { recursive: true });
   await writeFile(target, text);
 }
+export function redirectHtml(target) {
+  if (!/^\/ai-knowledge-base\/(?:[a-z0-9-]+\/)+$/.test(target)) throw new Error(`Invalid redirect target: ${target}`);
+  return `<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>页面已迁移</title><link rel="canonical" href="${origin}${target}"><meta name="robots" content="noindex">
+<meta http-equiv="refresh" content="0;url=${target}">
+<script>location.replace(${JSON.stringify(target)} + location.search + location.hash);</script></head>
+<body><main><h1>页面已迁移</h1><p><a href="${target}">前往新页面</a></p></main></body></html>`;
+}
 const xml = value => String(value).replace(/[<>&"']/g, ch => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&apos;' })[ch]);
 export async function prepare() {
   await rm(output, { recursive: true, force: true });
   await mkdir(output, { recursive: true });
+  const documentRoutes = { 'ai-knowledge-base/index.md': '/ai-knowledge-base/' };
+  const legacyRoutes = {};
+  const usedRoutes = new Set(Object.values(documentRoutes));
+  for (const filename of (await files(path.join(root, 'ai-knowledge-base'))).filter(f => f.endsWith('.md'))) {
+    const relative = path.relative(root, filename);
+    if (relative === 'ai-knowledge-base/index.md') continue;
+    const source = matter(await readFile(filename, 'utf8'));
+    const parent = matter(await readFile(path.join(path.dirname(filename), 'index.md'), 'utf8'));
+    const slugs = path.basename(filename) === 'index.md' ? [source.data.slug] : [parent.data.slug, source.data.slug];
+    if (slugs.some(slug => typeof slug !== 'string' || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug))) throw new Error(`Invalid English slug: ${filename}`);
+    const route = `/ai-knowledge-base/${slugs.join('/')}/`;
+    if (usedRoutes.has(route)) throw new Error(`Duplicate document route: ${route}`);
+    usedRoutes.add(route);
+    documentRoutes[relative] = route;
+    legacyRoutes['/' + relative.replace(/index\.md$/, '').replace(/\.md$/, '/')] = route;
+  }
+  const groupTitles = [];
   const groups = [];
   for (const entry of await readdir(path.join(root, 'ai-knowledge-base'), { withFileTypes: true })) {
     if (!entry.isDirectory()) continue;
     const directory = `ai-knowledge-base/${entry.name}`;
     const index = matter(await readFile(path.join(root, directory, 'index.md'), 'utf8'));
     const items = [];
+    const articleLinks = [];
     for (const filename of (await files(path.join(root, directory))).filter(f => f.endsWith('.md') && path.basename(f) !== 'index.md')) {
       const source = matter(await readFile(filename, 'utf8'));
       const relative = path.relative(root, filename);
-      const link = '/' + relative.replace(/\.md$/, '/');
-      items.push({ text: source.data.title, link });
-      await write(relative.replace(/\.md$/, '/index.md'), page(source.data.title, convertContent(source.content), {
+      const link = documentRoutes[relative];
+      items.push({ text: source.data.sidebar_title, link });
+      articleLinks.push(`- [${source.data.title}](${link})`);
+      await write(link.slice(1) + 'index.md', page(source.data.title, convertContent(source.content, documentRoutes), {
         description: source.data.category, category: source.data.category,
         updated_at: source.data.updated_at, level: source.data.level,
       }));
     }
-    const link = `/${directory}/`;
-    groups.push({ text: index.data.title, link, collapsed: false, items });
-    await write(`${directory}/index.md`, page(index.data.title, convertContent(index.content) + '\n' + items.map(i => `- [${i.text}](${encodeURI(i.link)})`).join('\n')));
+    const link = documentRoutes[`${directory}/index.md`];
+    groups.push({ text: index.data.sidebar_title, link, collapsed: false, items });
+    groupTitles.push(index.data.title);
+    await write(link.slice(1) + 'index.md', page(index.data.title, convertContent(index.content, documentRoutes) + '\n' + articleLinks.join('\n')));
   }
   const aiIndex = matter(await readFile(path.join(root, 'ai-knowledge-base/index.md'), 'utf8'));
-  await write('ai-knowledge-base/index.md', page(aiIndex.data.title, convertContent(aiIndex.content)));
+  await write('ai-knowledge-base/index.md', page(aiIndex.data.title, convertContent(aiIndex.content, documentRoutes)));
   const weekly = [];
   for (const filename of (await files(path.join(root, 'ai-weekly'))).filter(f => f.endsWith('.md')).reverse()) {
     const name = path.basename(filename, '.md');
@@ -110,7 +139,7 @@ export async function prepare() {
       { theme: 'brand', text: '开始阅读', link: '/ai-knowledge-base/' },
       { theme: 'alt', text: '浏览随笔', link: '/blog/' },
     ] },
-    features: groups.map((g, i) => ({ title: g.text, details: [
+    features: groups.map((g, i) => ({ title: groupTitles[i], details: [
       '理解大语言模型、上下文窗口与大模型幻觉，建立清晰的基础认知。',
       '认识推理模型、多模态与 AI 智能体，把握能力演进。',
       '学习提示词工程、检索增强生成与工作流自动化，连接实际任务。',
@@ -118,10 +147,11 @@ export async function prepare() {
     ][i], link: g.link, linkText: '进入模块' })),
   }));
   await cp(path.join(root, 'assets'), path.join(output, 'public/assets'), { recursive: true });
+  for (const [oldRoute, target] of Object.entries(legacyRoutes)) await write(`public${oldRoute}index.html`, redirectHtml(target));
   await write('public/.nojekyll', '');
   await write('public/robots.txt', `User-agent: *\nAllow: /\nSitemap: ${origin}/sitemap.xml\n`);
   await write('public/feed.xml', `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>随笔与 AI 知识库</title><link>${origin}</link><description>技术随笔</description>${posts.map(p => `<item><title>${xml(p.text)}</title><link>${origin}${p.link}</link><guid>${origin}${p.link}</guid><pubDate>${new Date(p.date).toUTCString()}</pubDate></item>`).join('')}</channel></rss>`);
-  await writeFile(path.join(root, '.vitepress/navigation.json'), JSON.stringify({ groups, posts, weekly }, null, 2) + '\n');
+  await writeFile(path.join(root, '.vitepress/navigation.json'), JSON.stringify({ groups, posts, weekly, documentRoutes, legacyRoutes }, null, 2) + '\n');
   console.log(`Prepared ${groups.reduce((n, g) => n + g.items.length, 0)} AI articles and ${posts.length} published posts.`);
 }
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await prepare();

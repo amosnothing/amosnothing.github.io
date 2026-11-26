@@ -4,6 +4,8 @@ title: 生态格局与安全合规
 parent: AI 知识库
 nav_order: 4
 has_toc: true
+slug: ecosystem
+sidebar_title: 生态与安全
 ---
 
 # 生态格局与安全合规

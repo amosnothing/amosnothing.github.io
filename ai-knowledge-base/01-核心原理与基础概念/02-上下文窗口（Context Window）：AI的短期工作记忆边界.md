@@ -6,6 +6,8 @@ level: 通识进阶
 parent: 核心原理与基础概念
 grand_parent: AI 知识库
 nav_order: 2
+slug: context-window
+sidebar_title: 上下文窗口
 ---
 
 # 上下文窗口（Context Window）：AI的短期工作记忆边界

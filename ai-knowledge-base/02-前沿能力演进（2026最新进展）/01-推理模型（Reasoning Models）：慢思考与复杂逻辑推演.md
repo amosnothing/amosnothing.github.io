@@ -6,6 +6,8 @@ level: 通识进阶
 parent: 前沿能力演进（2026最新进展）
 grand_parent: AI 知识库
 nav_order: 1
+slug: reasoning-models
+sidebar_title: 推理模型
 ---
 
 # 推理模型（Reasoning Models）：慢思考与复杂逻辑推演

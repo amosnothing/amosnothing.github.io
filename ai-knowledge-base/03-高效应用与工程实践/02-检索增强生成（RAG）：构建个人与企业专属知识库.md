@@ -6,6 +6,8 @@ level: 通识进阶
 parent: 高效应用与工程实践
 grand_parent: AI 知识库
 nav_order: 2
+slug: rag
+sidebar_title: 检索增强生成
 ---
 
 # 检索增强生成（RAG）：构建个人与企业专属知识库

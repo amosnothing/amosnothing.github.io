@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile, access } from 'node:fs/promises';
 import path from 'node:path';
-import { files, postRoute, convertContent } from '../scripts/prepare-site.mjs';
+import { files, postRoute, convertContent, weeklyFileStem } from '../scripts/prepare-site.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const dist = path.join(root, '.vitepress/dist');
@@ -101,7 +101,7 @@ test('AI document emphasis renders as strong text, including CJK parenthesis bou
   assert.ok(terms > 50, 'Verify emphasis across the knowledge base');
 });
 
-test('weekly news uses one Monday-named file per week and appears in navigation and output', async () => {
+test('weekly news uses one ISO-week-named file per week and appears in navigation and output', async () => {
   const matter = (await import('gray-matter')).default;
   const reports = (await files(path.join(root, 'ai-weekly'))).filter(f => f.endsWith('.md'));
   const weeks = new Set();
@@ -109,16 +109,16 @@ test('weekly news uses one Monday-named file per week and appears in navigation 
   const home = await read('index.html');
   for (const file of reports) {
     const name = path.basename(file, '.md');
-    assert.match(name, /^\d{4}-\d{2}-\d{2}$/);
-    assert.equal(new Date(`${name}T00:00:00Z`).getUTCDay(), 1);
+    assert.match(name, /^\d{4}-week\d{2}$/);
     assert.ok(!weeks.has(name), `Duplicate weekly report: ${name}`);
     weeks.add(name);
     const source = matter(await readFile(file, 'utf8'));
-    assert.equal(new Date(source.data.week_start).toISOString().slice(0, 10), name);
+    assert.equal(weeklyFileStem(source.data.week_start), name);
+    const date = new Date(source.data.week_start).toISOString().slice(0, 10);
     assert.equal(new Date(source.data.week_end) - new Date(source.data.week_start), 6 * 86400000);
     assert.ok(new Date(source.data.updated_at) >= new Date(source.data.week_start));
-    const link = `/ai-weekly/${name}/`;
-    const html = await read(`ai-weekly/${name}/index.html`);
+    const link = `/ai-weekly/${date}/`;
+    const html = await read(`ai-weekly/${date}/index.html`);
     assert.ok(archive.includes(link) && html.includes('周报归档'), name);
     assert.ok(home.includes('/ai-weekly/'));
     assert.ok(html.includes('新闻概览') && html.includes('原文') && html.includes('参考来源'), name);
@@ -129,4 +129,14 @@ test('weekly news uses one Monday-named file per week and appears in navigation 
   const first = await read('ai-weekly/2026-11-23/index.html');
   for (const topic of ['蛋白质设计', 'Claude Ship', 'Working with AI', '量子算法', 'Shirudo', 'RoboTrack']) assert.ok(first.includes(topic), topic);
   assert.equal((first.match(/<h2 id="_[1-6]-/g) || []).length, 6);
+});
+
+
+test('ISO weekly filenames handle year boundaries and two-digit weeks', () => {
+  assert.equal(weeklyFileStem('2026-11-23'), '2026-week48');
+  assert.equal(weeklyFileStem('2025-12-29'), '2026-week01');
+  assert.equal(weeklyFileStem('2020-12-28'), '2020-week53');
+  assert.equal(weeklyFileStem('2021-01-04'), '2021-week01');
+  assert.throws(() => weeklyFileStem('2026-11-26'), /Monday/);
+  assert.throws(() => weeklyFileStem('invalid'), /Monday/);
 });

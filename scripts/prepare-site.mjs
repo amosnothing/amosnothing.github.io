@@ -16,6 +16,17 @@ export function postRoute(filename, date) {
   const day = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(date));
   return `/${day}-${slug}/`;
 }
+export function weeklyFileStem(value) {
+  const monday = new Date(value);
+  if (Number.isNaN(monday.getTime()) || monday.getUTCDay() !== 1) {
+    throw new Error('week_start must be a valid Monday');
+  }
+  const thursday = new Date(monday);
+  thursday.setUTCDate(monday.getUTCDate() + 3);
+  const year = thursday.getUTCFullYear();
+  const week = Math.ceil(((thursday - Date.UTC(year, 0, 1)) / 86400000 + 1) / 7);
+  return `${year}-week${String(week).padStart(2, '0')}`;
+}
 export function convertContent(content) {
   return content
     .replace(/\{% capture article_url %\}\{% link (.*?) %\}\{% endcapture %\}\s*\n- \[(.*?)\]\(\{\{ article_url \| uri_escape \}\}\)/g,
@@ -62,16 +73,17 @@ export async function prepare() {
   const weekly = [];
   for (const filename of (await files(path.join(root, 'ai-weekly'))).filter(f => f.endsWith('.md')).reverse()) {
     const name = path.basename(filename, '.md');
-    const start = new Date(`${name}T00:00:00Z`);
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(name) || Number.isNaN(start.getTime()) || start.toISOString().slice(0, 10) !== name || start.getUTCDay() !== 1) {
-      throw new Error(`Weekly report filename must be its Monday date: ${filename}`);
-    }
     const source = matter(await readFile(filename, 'utf8'));
-    const link = `/ai-weekly/${name}/`;
+    if (name !== weeklyFileStem(source.data.week_start)) {
+      throw new Error(`Weekly report filename must match its ISO week: ${filename}`);
+    }
+    // Keep published date-based URLs stable when source filenames change.
+    const date = new Date(source.data.week_start).toISOString().slice(0, 10);
+    const link = `/ai-weekly/${date}/`;
     weekly.push({ text: source.data.title, link });
-    await write(`ai-weekly/${name}/index.md`, matter.stringify(source.content, source.data));
+    await write(`ai-weekly/${date}/index.md`, matter.stringify(source.content, source.data));
   }
-  await write('ai-weekly/index.md', page('AI 资讯周报', '# AI 资讯周报\n\n每个自然周（周一至周日）只维护一个 Markdown 文件，以周一日期命名；同周消息追加到原文件。优先收录官方公告与原始研究，逐条提供发布日期、新闻概览及原文链接。\n\n' + weekly.map(item => `- [${item.text}](${item.link})`).join('\n')));
+  await write('ai-weekly/index.md', page('AI 资讯周报', '# AI 资讯周报\n\n每个自然周（周一至周日）只维护一个 Markdown 文件，以年份与 ISO 周数命名（如 2026-week48.md）；同周消息追加到原文件。优先收录官方公告与原始研究，逐条提供发布日期、新闻概览及原文链接。\n\n' + weekly.map(item => `- [${item.text}](${item.link})`).join('\n')));
   const posts = [];
   for (const filename of (await files(path.join(root, '_posts'))).filter(f => /^\d{4}-\d{2}-\d{2}-.+\.md$/.test(path.basename(f)))) {
     const source = matter(await readFile(filename, 'utf8'));

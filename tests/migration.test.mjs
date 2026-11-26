@@ -116,7 +116,7 @@ test('the generated official local-search index finds document topics', async ()
   const asset = (await files(path.join(dist, 'assets'))).find(f => f.includes('@localSearchIndexroot'));
   const data = (await import(pathToFileURL(asset))).default;
   const index = MiniSearch.loadJSON(data, { fields: ['title', 'titles', 'text'], storeFields: ['title', 'titles'] });
-  for (const [query, expected] of [['RAG', '/practice/rag/'], ['上下文', '/fundamentals/context-window/'], ['Reasoning', '/frontiers/reasoning-models/'], ['TestGen', '/ai-software/quality-engineering/'], ['NL2Test', '/ai-software/bytedance-testing/']]) {
+  for (const [query, expected] of [['RAG', '/practice/rag/'], ['上下文', '/fundamentals/context-window/'], ['Reasoning', '/frontiers/reasoning-models/'], ['TestGen', '/ai-software/quality-engineering/'], ['NL2Test', '/ai-software/bytedance-testing/'], ['Harness', '/ai-software/agent-harness/']]) {
     assert.ok(index.search(query, { prefix: true, fuzzy: 0.2 }).slice(0, 10).some(r => r.id.includes(expected)), query);
   }
 });
@@ -224,9 +224,9 @@ test('legacy redirects preserve query and fragment and reject unsafe targets', a
 test('software engineering articles have sources, standard sections and short English navigation', async () => {
   const matter = (await import('gray-matter')).default;
   const articles = (await files(path.join(root, 'ai-software'))).filter(file => file.endsWith('.md') && !file.endsWith('/index.md'));
-  assert.equal(articles.length, 6);
+  assert.equal(articles.length, 7);
   assert.deepEqual(navigation.software.flatMap(group => group.items.map(item => item.link)), [
-    '/ai-software/coding-agents/', '/ai-software/context-and-multi-agent/', '/ai-software/quality-engineering/', '/ai-software/enterprise-adoption/',
+    '/ai-software/coding-agents/', '/ai-software/context-and-multi-agent/', '/ai-software/agent-harness/', '/ai-software/quality-engineering/', '/ai-software/enterprise-adoption/',
     '/ai-software/alibaba-rd-practice/', '/ai-software/bytedance-testing/',
   ]);
   const index = await read('ai-software/index.html');
@@ -288,7 +288,7 @@ test('reviewed enterprise cases use dated primary evidence within a six-month wi
 test('software topics have collapsible groups, group landing pages and stable article URLs', async () => {
   const matter = (await import('gray-matter')).default;
   const expected = [
-    ['development', '研发技术', ['coding-agents', 'context-and-multi-agent']],
+    ['development', '研发技术', ['coding-agents', 'context-and-multi-agent', 'agent-harness']],
     ['testing', '测试质量', ['quality-engineering']],
     ['enterprise', '企业实践', ['enterprise-adoption', 'alibaba-rd-practice', 'bytedance-testing']],
   ];
@@ -311,7 +311,7 @@ test('software topics have collapsible groups, group landing pages and stable ar
       const html = await read(route.slice(1) + 'index.html');
       const sections = [...html.matchAll(/<section class="VPSidebarItem level-0([^"]*)"/g)];
       assert.equal(sections.filter(([, classes]) => classes.split(' ').includes('collapsible')).length, 3);
-      assert.equal((html.match(/class="VPSidebarItem level-1 is-link/g) || []).length, 7);
+      assert.equal((html.match(/class="VPSidebarItem level-1 is-link/g) || []).length, 8);
       for (const [, title] of expected) assert.ok(html.includes(title));
     }
   }

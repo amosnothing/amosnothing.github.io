@@ -42,14 +42,13 @@ test('standalone blog sources publish dated posts while keeping drafts unpublish
   assert.ok(drafts > 0, 'Undated drafts are preserved');
   assert.deepEqual(published.sort(), navigation.posts.map(post => post.link).sort());
 });
-test('Collection allowlist diary renders code and review status and appears first in the archive', async () => {
+test('Collection allowlist diary renders code and appears first in the archive', async () => {
   const link = '/2026-11-26-classutils-collection-allowlist/';
   assert.equal(navigation.posts[0].link, link);
   const html = await read(link.slice(1) + 'index.html');
   for (const text of ['问题现象', '原因', '为什么需要白名单', '处理方式', '经验',
     'list_customer_head', 'store_order_seq_prefix_config', 'list_customer_filter',
-    'auto_cancel_overtime_unpaid_order_config', 'parseParameter', 'setDefaultParameter',
-    '当前为源码审查结论，修复方案尚未实施，未验证实际 Dubbo 调用结果。']) {
+    'auto_cancel_overtime_unpaid_order_config', 'parseParameter', 'setDefaultParameter']) {
     assert.ok(html.includes(text), text);
   }
   assert.ok(html.includes('language-java') && html.includes('language-json'));

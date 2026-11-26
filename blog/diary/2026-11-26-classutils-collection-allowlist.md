@@ -83,5 +83,3 @@ JacksonUtils.fromJson(用户填写的值, clazz);
 本次问题是白名单遗漏了业务需要的 `java.util.Collection`。合理的处理是补充该类型并验证数组转换结果，继续保持 Dubbo 的形参声明；取消白名单或对所有类型重新开放 `Class.forName()`，都会重新引入原先需要限制的风险。
 
 白名单也需要在类加载和反序列化之前生效。若 Jackson 另外启用了允许输入指定子类型的多态反序列化，还需要单独限制这些子类型；外层参数类型通过白名单，并不意味着内部对象类型就自动安全。Jackson 官方也提醒，不可信输入下的默认多态类型处理需要限制允许反序列化的类，参见[官方安全说明](https://github.com/FasterXML/jackson-docs/wiki/JacksonPolymorphicDeserialization#111-security-risks-using-global-default-typing)。这里是补充的安全原则，尚未核实当前 `JacksonUtils` 是否启用了相关配置。
-
-> 当前为源码审查结论，修复方案尚未实施，未验证实际 Dubbo 调用结果。

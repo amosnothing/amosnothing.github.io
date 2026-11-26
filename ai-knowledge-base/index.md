@@ -1,13 +1,13 @@
 ---
 layout: page
-title: AI 知识库
+title: AI 通识
 nav_order: 1
 has_toc: false
 subtitle: 人工智能基础、前沿能力、应用实践与安全合规
 permalink: /ai-knowledge-base/
 ---
 
-# AI 知识库
+# AI 通识
 
 面向非技术背景的职场人与学习者，用生活与工作场景理解 AI，并通过原始来源核查关键事实。
 

@@ -279,3 +279,16 @@ test('software topics have collapsible groups, group landing pages and stable ar
     }
   }
 });
+
+
+test('AI general-knowledge section is renamed without changing the site brand or URLs', async () => {
+  const { default: config } = await import('../.vitepress/config.mjs');
+  assert.equal(config.title, 'AI 知识库');
+  assert.deepEqual(config.themeConfig.nav.find(item => item.link === '/ai-knowledge-base/'), { text: 'AI 通识', link: '/ai-knowledge-base/' });
+  assert.deepEqual(config.themeConfig.sidebar['/ai-knowledge-base/'][0], { text: '通识概览', link: '/ai-knowledge-base/' });
+  const overview = await read('ai-knowledge-base/index.html');
+  assert.match(overview, /<title>AI 通识 \| AI 知识库<\/title>/);
+  assert.match(overview, /<h1[^>]*>AI 通识/);
+  assert.ok(overview.includes('通识概览'));
+  assert.ok((await read('index.html')).includes('AI 通识'));
+});

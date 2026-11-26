@@ -188,7 +188,7 @@ test('software engineering articles have sources, standard sections and short En
   const matter = (await import('gray-matter')).default;
   const articles = (await files(path.join(root, 'ai-software'))).filter(file => file.endsWith('.md') && !file.endsWith('/index.md'));
   assert.equal(articles.length, 6);
-  assert.deepEqual(navigation.software.map(item => item.link), [
+  assert.deepEqual(navigation.software.flatMap(group => group.items.map(item => item.link)), [
     '/ai-software/coding-agents/', '/ai-software/context-and-multi-agent/', '/ai-software/quality-engineering/', '/ai-software/enterprise-adoption/',
     '/ai-software/alibaba-rd-practice/', '/ai-software/bytedance-testing/',
   ]);
@@ -199,7 +199,7 @@ test('software engineering articles have sources, standard sections and short En
     assert.equal(data.level, '通识进阶');
     assert.ok(data.updated_at);
     const link = `/ai-software/${path.basename(file, '.md')}/`;
-    const item = navigation.software.find(item => item.link === link);
+    const item = navigation.software.flatMap(group => group.items).find(item => item.link === link);
     assert.ok(item && item.text.length <= 10, link);
     assert.ok(index.includes(link));
     const html = await read(link.slice(1) + 'index.html');
@@ -222,7 +222,7 @@ test('reviewed enterprise cases use dated primary evidence within a six-month wi
   const expected = ['enterprise-adoption', 'alibaba-rd-practice', 'bytedance-testing'];
   const allowed = new Set(['blog.qoder.com', 'www.toutiao.com', 'arxiv.org']);
   for (const name of expected) {
-    const { data, content } = matter(await readFile(path.join(root, `ai-software/${name}.md`), 'utf8'));
+    const { data, content } = matter(await readFile(path.join(root, `ai-software/enterprise/${name}.md`), 'utf8'));
     const start = new Date(data.source_window_start);
     const end = new Date(data.source_window_end);
     const earliest = new Date(end);
@@ -245,4 +245,37 @@ test('reviewed enterprise cases use dated primary evidence within a six-month wi
   const bytedance = await read('ai-software/bytedance-testing/index.html');
   for (const qualification of ['允许少量后续修改', '2025 年 3 月', '不代表缺陷检出率']) assert.ok(bytedance.includes(qualification), qualification);
   assert.ok((await read('ai-software/alibaba-rd-practice/index.html')).includes('全流程操作明确以演示呈现'));
+});
+
+
+test('software topics have collapsible groups, group landing pages and stable article URLs', async () => {
+  const matter = (await import('gray-matter')).default;
+  const expected = [
+    ['development', '研发技术', ['coding-agents', 'context-and-multi-agent']],
+    ['testing', '测试质量', ['quality-engineering']],
+    ['enterprise', '企业实践', ['enterprise-adoption', 'alibaba-rd-practice', 'bytedance-testing']],
+  ];
+  assert.equal(navigation.software.length, expected.length);
+  const overview = await read('ai-software/index.html');
+  for (const [i, [slug, label, articles]] of expected.entries()) {
+    const group = navigation.software[i];
+    assert.equal(group.text, label);
+    assert.equal(group.link, `/ai-software/${slug}/`);
+    assert.equal(group.collapsed, false);
+    assert.deepEqual(group.items.map(item => item.link), articles.map(name => `/ai-software/${name}/`));
+    assert.ok(overview.includes(group.link));
+    const landing = await read(`ai-software/${slug}/index.html`);
+    for (const name of articles) {
+      const file = `ai-software/${slug}/${name}.md`;
+      const route = `/ai-software/${name}/`;
+      const source = matter(await readFile(path.join(root, file), 'utf8'));
+      assert.equal(navigation.documentRoutes[file], route);
+      assert.ok(landing.includes(source.data.title) && landing.includes(route));
+      const html = await read(route.slice(1) + 'index.html');
+      const sections = [...html.matchAll(/<section class="VPSidebarItem level-0([^"]*)"/g)];
+      assert.equal(sections.filter(([, classes]) => classes.split(' ').includes('collapsible')).length, 3);
+      assert.equal((html.match(/class="VPSidebarItem level-1 is-link/g) || []).length, 7);
+      for (const [, title] of expected) assert.ok(html.includes(title));
+    }
+  }
 });

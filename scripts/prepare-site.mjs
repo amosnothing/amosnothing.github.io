@@ -100,19 +100,43 @@ export async function prepare() {
   const aiIndex = matter(await readFile(path.join(root, 'ai-knowledge-base/index.md'), 'utf8'));
   await write('ai-knowledge-base/index.md', page(aiIndex.data.title, convertContent(aiIndex.content, documentRoutes)));
   const software = [];
-  const softwareSources = await Promise.all((await files(path.join(root, 'ai-software')))
-    .filter(file => file.endsWith('.md') && path.basename(file) !== 'index.md')
+  const softwareFiles = (await files(path.join(root, 'ai-software'))).filter(file => file.endsWith('.md'));
+  const softwareSources = await Promise.all(softwareFiles
+    .filter(file => path.basename(file) !== 'index.md')
     .map(async file => ({ file, source: matter(await readFile(file, 'utf8')) })));
   softwareSources.sort((a, b) => a.source.data.nav_order - b.source.data.nav_order || a.file.localeCompare(b.file));
+  const softwareGroups = await Promise.all(softwareFiles
+    .filter(file => path.basename(file) === 'index.md' && path.dirname(file) !== path.join(root, 'ai-software'))
+    .map(async file => ({ file, source: matter(await readFile(file, 'utf8')) })));
+  softwareGroups.sort((a, b) => a.source.data.nav_order - b.source.data.nav_order || a.file.localeCompare(b.file));
   for (const { file, source } of softwareSources) {
     const slug = path.basename(file, '.md');
     if (!/^[a-z]+(?:-[a-z]+)*$/.test(slug)) throw new Error(`Invalid software article filename: ${file}`);
     const link = `/ai-software/${slug}/`;
-    software.push({ text: source.data.sidebar_title, link });
+    if (usedRoutes.has(link)) throw new Error(`Duplicate document route: ${link}`);
+    usedRoutes.add(link);
+    documentRoutes[path.relative(root, file)] = link;
     await write(link.slice(1) + 'index.md', matter.stringify(source.content, source.data));
   }
+  let groupedArticles = 0;
+  for (const { file, source } of softwareGroups) {
+    const slug = source.data.slug;
+    if (typeof slug !== 'string' || !/^[a-z]+(?:-[a-z]+)*$/.test(slug)) throw new Error(`Invalid software group slug: ${file}`);
+    const link = `/ai-software/${slug}/`;
+    if (usedRoutes.has(link)) throw new Error(`Duplicate document route: ${link}`);
+    usedRoutes.add(link);
+    documentRoutes[path.relative(root, file)] = link;
+    const articles = softwareSources.filter(article => path.dirname(article.file) === path.dirname(file));
+    if (!articles.length) throw new Error(`Empty software group: ${file}`);
+    const items = articles.map(article => ({ text: article.source.data.sidebar_title, link: documentRoutes[path.relative(root, article.file)] }));
+    groupedArticles += articles.length;
+    software.push({ text: source.data.sidebar_title, link, collapsed: false, items });
+    await write(link.slice(1) + 'index.md', page(source.data.title, source.content + '\n' + articles.map((article, i) => `- [${article.source.data.title}](${items[i].link})`).join('\n')));
+  }
+  if (groupedArticles !== softwareSources.length) throw new Error('Every software article must belong to a group with index.md');
   const softwareIndex = matter(await readFile(path.join(root, 'ai-software/index.md'), 'utf8'));
-  await write('ai-software/index.md', page(softwareIndex.data.title, softwareIndex.content + '\n' + softwareSources.map(({ file, source }) => `- [${source.data.title}](/ai-software/${path.basename(file, '.md')}/)`).join('\n')));
+  documentRoutes['ai-software/index.md'] = '/ai-software/';
+  await write('ai-software/index.md', page(softwareIndex.data.title, softwareIndex.content + '\n' + software.map(group => `### [${group.text}](${group.link})\n\n` + group.items.map(item => `- [${item.text}](${item.link})`).join('\n')).join('\n\n')));
   const weekly = [];
   for (const filename of (await files(path.join(root, 'ai-weekly'))).filter(f => f.endsWith('.md')).reverse()) {
     const name = path.basename(filename, '.md');

@@ -66,20 +66,115 @@ JacksonUtils.fromJson(用户填写的值, clazz);
 
 ## 补充：为什么需要给类加白名单
 
-### 参数配置不应决定客户端执行哪些类
+### 1. 先把“类”理解成一种工具
 
-这里的输入同时包含“类型名称”和“参数值”。如果直接把用户填写的类型交给 `Class.forName()`，就相当于允许配置者从客户端运行环境中选择一个类，再交给 JSON 工具创建对象。参数转换因此跨越了信任边界：外部输入开始影响客户端执行哪些初始化和对象构造逻辑。
+可以把 Java 程序想成一个工具箱。“类”就是里面不同的工具：`String` 用来表示文字，`List` 用来装一组数据，其他类可能负责读文件、发网络请求。
 
-单参数的 `Class.forName(String)` 会初始化目标类，首次初始化时可能执行静态代码块。即使改用不触发初始化的加载方式，后续反序列化仍可能调用构造函数、工厂方法、setter 或自定义反序列化器，具体取决于目标类和 Jackson 配置。因此，仅避免类初始化并不能替代对目标类型的限制。[Java 官方文档](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Class.html#forName(java.lang.String))说明了该加载方法的初始化行为。
+我们本来只想把用户填的文字转换成接口需要的数据。例如：
 
-### 白名单把可用类型限制在明确需要的范围内
+```java
+// 用户填写的目标类型：一个集合，可以装多个值。
+String typeName = "java.util.Collection";
 
-客户端通常只需要转换字符串、数字、布尔值以及常用集合等有限类型。固定白名单让程序只接受经过确认的类型，而不是默认信任运行环境中的所有类。相比不断补充危险类黑名单，白名单更容易明确允许范围，也能避免新增依赖后无意中扩大可加载类型。
+// 用户填写的参数值：一段 JSON 文字，里面有两个字符串。
+String json = "[\"apple\", \"banana\"]";
 
-风险是否能够被利用，仍取决于输入是否可控、客户端有哪些类、目标类的具体行为以及反序列化配置，不能仅凭使用了反射就认定一定能够远程执行代码。但这些条件不应成为放开任意类加载的理由。
+// 我们希望得到：一个装着 apple 和 banana 的集合，
+// 而不是把整段 JSON 原样当作一条字符串传出去。
+```
 
-### 应补全白名单，同时保留安全边界
+这里，**JSON 是“要处理的数据”，类型名称是“用哪种工具处理”**。问题在于：如果工具也完全由输入决定，程序就可能用上原本不该在这里使用的类。
 
-本次问题是白名单遗漏了业务需要的 `java.util.Collection`。合理的处理是补充该类型并验证数组转换结果，继续保持 Dubbo 的形参声明；取消白名单或对所有类型重新开放 `Class.forName()`，都会重新引入原先需要限制的风险。
+### 2. 为什么“按名字找一个类”也可能执行代码？
 
-白名单也需要在类加载和反序列化之前生效。若 Jackson 另外启用了允许输入指定子类型的多态反序列化，还需要单独限制这些子类型；外层参数类型通过白名单，并不意味着内部对象类型就自动安全。Jackson 官方也提醒，不可信输入下的默认多态类型处理需要限制允许反序列化的类，参见[官方安全说明](https://github.com/FasterXML/jackson-docs/wiki/JacksonPolymorphicDeserialization#111-security-risks-using-global-default-typing)。这里是补充的安全原则，尚未核实当前 `JacksonUtils` 是否启用了相关配置。
+原来的代码大致分两步，下面是示意片段，`JacksonUtils` 代表项目现有的 JSON 转换工具：
+
+```java
+// 第一步：按照输入的名字查找类，并触发这个类的初始化。
+Class<?> clazz = Class.forName(typeName);
+
+// 第二步：把 JSON 文字转换成这个类型的 Java 对象。
+Object value = JacksonUtils.fromJson(json, clazz);
+```
+
+第一步看起来只是在“查名字”，但 Java 的类可以带一段初始化代码。**第一次初始化这个类时，这段代码会自动执行，不需要另外调用它。**
+
+下面是一个可以单独运行的小例子。保存为 `WhitelistDemo.java`，执行 `javac WhitelistDemo.java`，再执行 `java WhitelistDemo`：
+
+```java
+public class WhitelistDemo {
+    public static class DemoTask {
+        // static 代码块：这个类第一次初始化时自动执行。
+        static {
+            System.out.println("2. 类的初始化代码执行了");
+        }
+
+        // 构造函数：创建这个类的对象时执行。
+        public DemoTask() {
+            System.out.println("4. 创建对象的代码执行了");
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+        System.out.println("1. 准备按名字查找类");
+        Class<?> clazz = Class.forName("WhitelistDemo$DemoTask");
+
+        System.out.println("3. 准备创建对象");
+        clazz.getDeclaredConstructor().newInstance();
+    }
+}
+```
+
+输出如下：
+
+```text
+1. 准备按名字查找类
+2. 类的初始化代码执行了
+3. 准备创建对象
+4. 创建对象的代码执行了
+```
+
+例子只打印文字。但如果某个类在这些位置写的是“读文件”或“发请求”，执行的就是相应操作。JSON 转换工具在创建对象、填写属性时，也可能执行构造函数或设置属性的方法，具体取决于类本身和工具配置。例子中的创建对象操作是为了演示执行时机，不代表 Jackson 内部一定使用同样的代码。
+
+这也不意味着输入任何类名就能执行任意代码：目标类首先必须能被当前程序找到，并且确实存在相关行为。白名单就是提前收紧可以选择的范围，避免把这些条件都交给外部输入碰运气。[Java 官方文档](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Class.html#forName(java.lang.String))说明了 `Class.forName(String)` 的初始化行为。
+
+### 3. 白名单就像“只借出这几件工具”的清单
+
+工具箱可以很大，但这个接口的参数转换只需要其中几种工具。白名单的意思是：**只有事先确认过的类型，才允许进入这条转换流程。**
+
+下面用一个简化片段演示这种思路。`Map` 可以理解成一张“名称 → 类型”的对照表，`String.class` 表示程序里事先确定好的类型：
+
+```java
+// 开发者事先列出允许的类型，输入只能从这里选择。
+java.util.Map<String, Class<?>> allowedTypes = java.util.Map.of(
+    "java.lang.String", String.class,
+    "java.util.List", java.util.List.class,
+    "java.util.Set", java.util.Set.class,
+    "java.util.Collection", java.util.Collection.class
+);
+
+// 先查清单，不再直接把输入交给 Class.forName()。
+Class<?> clazz = allowedTypes.get(typeName);
+
+if (clazz == null) {
+    // 示例中直接拒绝；项目中应按已有约定处理未支持的类型。
+    throw new IllegalArgumentException("不支持的参数类型：" + typeName);
+}
+
+// 只有清单里的类型，才进入 JSON 转换。
+Object value = JacksonUtils.fromJson(json, clazz);
+```
+
+这是讲解原理的示意片段，不是项目的完整修复代码。实际白名单还需要覆盖已有功能使用的其他类型；未命中的情况也要遵循项目原有处理约定。
+
+这张清单应当在加载输入指定的类、转换 JSON 之前检查。如果先执行 `Class.forName(typeName)`，再检查是否允许，那么类的初始化代码可能已经执行，检查就晚了。
+
+### 4. 回到这次踩坑：清单漏了一项，就补上这一项
+
+可以把这次问题理解为：“允许借出 List 工具，也允许借出 Set 工具，却忘了登记 Collection 工具。”因为清单按名称逐个查找，登记了 `java.util.List`，不会自动登记 `java.util.Collection`。
+
+所以，修复方向是把 `Collection.class` 加入现有白名单，让 JSON 数组进入集合转换流程。`Collection` 本身是接口，具体创建哪种集合由 JSON 工具决定；传给 Dubbo 的形参类型仍然保留 `java.util.Collection`，与服务接口保持一致。
+
+**漏了业务需要的类型，应补全白名单；不能为了让这次请求通过，就重新允许输入任意类名。** 类似门禁漏登记了一位应当进入的人，应该补登记，而不是把门禁拆掉。
+
+白名单也不是所有 JSON 安全问题的万能解法。如果 JSON 工具还允许数据额外指定其他对象类型，那些类型也需要单独限制。这属于另一项配置检查，参见 [Jackson 官方安全说明](https://github.com/FasterXML/jackson-docs/wiki/JacksonPolymorphicDeserialization#111-security-risks-using-global-default-typing)。

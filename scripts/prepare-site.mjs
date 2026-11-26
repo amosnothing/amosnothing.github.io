@@ -152,7 +152,7 @@ export async function prepare() {
   }
   await write('ai-weekly/index.md', page('AI 资讯周报', '# AI 资讯周报\n\n每个自然周（周一至周日）只维护一个 Markdown 文件，以年份与 ISO 周数命名（如 2026-week48.md）；同周消息追加到原文件。优先收录官方公告与原始研究，逐条提供发布日期、新闻概览及原文链接。\n\n' + weekly.map(item => `- [${item.text}](${item.link})`).join('\n')));
   const posts = [];
-  for (const filename of (await files(path.join(root, '_posts'))).filter(f => /^\d{4}-\d{2}-\d{2}-.+\.md$/.test(path.basename(f)))) {
+  for (const filename of (await files(path.join(root, 'blog'))).filter(f => /^\d{4}-\d{2}-\d{2}-.+\.md$/.test(path.basename(f)))) {
     const source = matter(await readFile(filename, 'utf8'));
     if (source.data.published === false) continue;
     const route = postRoute(filename, source.data.date);

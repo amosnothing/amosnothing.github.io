@@ -6,7 +6,7 @@
 
 - AI 文档仍以 `ai-knowledge-base/` 为唯一内容来源，目录和文章文件名保留。模块和文章通过 `slug` 设置稳定的英文网址，`sidebar_title` 设置简短菜单名称；正文和页面标题仍使用完整 `title`。
 - 旧中文网址输出静态跳转页，保留查询参数和页内锚点；无 JavaScript 时仍有自动跳转与可点击链接。导航、目录、搜索与站点地图使用英文新网址。跳转页不参与搜索或站点地图。
-- 已发布随笔仍以 `_posts/` 中日期文件名的 Markdown 为来源；未使用日期文件名的稿件保持未发布。
+- 随笔统一放在独立的 `blog/` 目录，保留原有分类子目录（如 `diary/`）；不再使用 `_posts/`。已发布随笔以 `YYYY-MM-DD-英文标题.md` 命名，并包含 `title`、`date`、`tags` 元数据；未使用日期文件名的稿件保持未发布。迁移只调整源码位置，已发布文章网址保持不变。
 - `scripts/prepare-site.mjs` 在构建前生成 `.vitepress/content/` 与导航数据，不要手工编辑生成目录。原始文档不被改写。
 - 转换原 Jekyll 链接与目录语法；页内目录由 VitePress 默认主题生成。
 - 兼容既有文章 URL、`aboutme/`、`tags/`、`page2/` 至 `page4/` 和 RSS 地址。随笔日期按原 Jekyll 的 UTC 元数据及 Asia/Shanghai 站点时区生成。

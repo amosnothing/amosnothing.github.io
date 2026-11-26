@@ -19,6 +19,44 @@ test('legacy post dates retain the original Jekyll Shanghai URLs across midnight
   assert.equal(postRoute('2024-08-26-diary.md', '2024-08-26T17:00:00Z'), '/2024-08-27-diary/');
   assert.equal(postRoute('2019-03-19-install-cygwin-clion.md', '2019-03-19T11:07:57Z'), '/2019-03-19-install-cygwin-clion/');
 });
+test('standalone blog sources publish dated posts while keeping drafts unpublished', async () => {
+  const matter = (await import('gray-matter')).default;
+  assert.equal(await exists(path.join(root, '_posts')), false);
+  const archive = await read('blog/index.html');
+  const feed = await read('feed.xml');
+  const published = [];
+  let drafts = 0;
+  for (const file of (await files(path.join(root, 'blog'))).filter(file => file.endsWith('.md'))) {
+    const { data } = matter(await readFile(file, 'utf8'));
+    if (!/^\d{4}-\d{2}-\d{2}-.+\.md$/.test(path.basename(file)) || data.published === false) {
+      drafts++;
+      assert.ok(!navigation.posts.some(post => post.text === data.title), file);
+      continue;
+    }
+    const link = postRoute(file, data.date);
+    published.push(link);
+    assert.ok(archive.includes(link), file);
+    assert.ok(feed.includes(`https://amosnothing.github.io${link}`), file);
+    assert.ok((await read(link.slice(1) + 'index.html')).includes(data.title), file);
+  }
+  assert.ok(drafts > 0, 'Undated drafts are preserved');
+  assert.deepEqual(published.sort(), navigation.posts.map(post => post.link).sort());
+});
+test('Collection allowlist diary renders code and review status and appears first in the archive', async () => {
+  const link = '/2026-11-26-classutils-collection-allowlist/';
+  assert.equal(navigation.posts[0].link, link);
+  const html = await read(link.slice(1) + 'index.html');
+  for (const text of ['问题现象', '原因', '为什么需要白名单', '处理方式', '经验',
+    'list_customer_head', 'store_order_seq_prefix_config', 'list_customer_filter',
+    'auto_cancel_overtime_unpaid_order_config', 'parseParameter', 'setDefaultParameter',
+    '当前为源码审查结论，修复方案尚未实施，未验证实际 Dubbo 调用结果。']) {
+    assert.ok(html.includes(text), text);
+  }
+  assert.ok(html.includes('language-java') && html.includes('language-json'));
+  assert.ok(html.includes('<strong>允许 <code>List</code>，不会自动允许它的父接口 <code>Collection</code></strong>'));
+  assert.ok((await read('tags/index.html')).includes(link));
+  assert.ok((await read('sitemap.xml')).includes(link));
+});
 test('Jekyll links with spaces and TOCs convert to VitePress without losing content', () => {
   const text = '{% capture article_url %}{% link ai-knowledge-base/a b.md %}{% endcapture %}\n- [主题]({{ article_url | uri_escape }})\n<details open markdown="block">\n<summary>本文目录</summary>\n1. TOC\n{:toc}\n</details>\n## 正文';
   const converted = convertContent(text);

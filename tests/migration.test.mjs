@@ -7,7 +7,11 @@ import { files, postRoute, convertContent, weeklyFileStem, redirectHtml } from '
 const root = path.resolve(import.meta.dirname, '..');
 const dist = path.join(root, '.vitepress/dist');
 const navigation = JSON.parse(await readFile(path.join(root, '.vitepress/navigation.json'), 'utf8'));
-const renderedDocument = file => navigation.documentRoutes[path.relative(root, file)].slice(1) + 'index.html';
+const renderedDocument = file => {
+  const relative = path.relative(root, file);
+  const route = navigation.documentRoutes[relative] || '/' + relative.replace(/index\.md$/, '').replace(/\.md$/, '/');
+  return route.slice(1) + 'index.html';
+};
 const read = relative => readFile(path.join(dist, relative), 'utf8');
 const exists = async p => { try { await access(p); return true; } catch (error) { if (error.code === 'ENOENT') return false; throw error; } };
 
@@ -75,7 +79,7 @@ test('the generated official local-search index finds document topics', async ()
   const asset = (await files(path.join(dist, 'assets'))).find(f => f.includes('@localSearchIndexroot'));
   const data = (await import(pathToFileURL(asset))).default;
   const index = MiniSearch.loadJSON(data, { fields: ['title', 'titles', 'text'], storeFields: ['title', 'titles'] });
-  for (const [query, expected] of [['RAG', '/practice/rag/'], ['上下文', '/fundamentals/context-window/'], ['Reasoning', '/frontiers/reasoning-models/']]) {
+  for (const [query, expected] of [['RAG', '/practice/rag/'], ['上下文', '/fundamentals/context-window/'], ['Reasoning', '/frontiers/reasoning-models/'], ['TestGen', '/ai-software/quality-engineering/'], ['Rakuten', '/ai-software/enterprise-adoption/']]) {
     assert.ok(index.search(query, { prefix: true, fuzzy: 0.2 }).slice(0, 10).some(r => r.id.includes(expected)), query);
   }
 });
@@ -88,7 +92,7 @@ test('CI dependency downloads use the public npm registry', async () => {
 });
 
 test('AI document emphasis renders as strong text, including CJK parenthesis boundaries', async () => {
-  const articles = (await files(path.join(root, 'ai-knowledge-base'))).filter(f => f.endsWith('.md'));
+  const articles = [...await files(path.join(root, 'ai-knowledge-base')), ...await files(path.join(root, 'ai-software'))].filter(f => f.endsWith('.md'));
   let terms = 0;
   for (const file of articles) {
     const relative = renderedDocument(file);
@@ -177,4 +181,34 @@ test('legacy redirects preserve query and fragment and reject unsafe targets', a
   assert.equal(destination, '/ai-knowledge-base/fundamentals/context-window/?from=bookmark#section');
   assert.throws(() => redirectHtml('https://example.com/'), /Invalid redirect/);
   assert.throws(() => redirectHtml('/ai-knowledge-base/<script>/'), /Invalid redirect/);
+});
+
+
+test('software engineering articles have sources, standard sections and short English navigation', async () => {
+  const matter = (await import('gray-matter')).default;
+  const articles = (await files(path.join(root, 'ai-software'))).filter(file => file.endsWith('.md') && !file.endsWith('/index.md'));
+  assert.equal(articles.length, 4);
+  assert.deepEqual(navigation.software.map(item => item.link), [
+    '/ai-software/coding-agents/', '/ai-software/context-and-multi-agent/', '/ai-software/quality-engineering/', '/ai-software/enterprise-adoption/',
+  ]);
+  const index = await read('ai-software/index.html');
+  for (const file of articles) {
+    const { data, content } = matter(await readFile(file, 'utf8'));
+    assert.equal(data.category, 'AI 软件工程');
+    assert.equal(data.level, '通识进阶');
+    assert.ok(data.updated_at);
+    const link = `/ai-software/${path.basename(file, '.md')}/`;
+    const item = navigation.software.find(item => item.link === link);
+    assert.ok(item && item.text.length <= 10, link);
+    assert.ok(index.includes(link));
+    const html = await read(link.slice(1) + 'index.html');
+    for (const section of ['核心摘要', '概念解析与生活类比', '核心价值与应用场景', '最新演进与代表性实践', '常见认知误区与使用边界', '参考来源']) assert.ok(html.includes(section), `${link}: ${section}`);
+    assert.ok(html.includes(data.title), link);
+    assert.ok(!/^```/m.test(content), 'Articles must not require code');
+    const sources = [...content.matchAll(/\[\[(\d+)\]\]\((https:\/\/[^)]+)\)/g)];
+    assert.ok(new Set(sources.map(match => match[1])).size >= 3, link);
+    for (const [, , url] of sources) assert.ok(html.includes(url), url);
+  }
+  assert.ok((await read('index.html')).includes('/ai-software/'));
+  assert.ok((await read('sitemap.xml')).includes('/ai-software/enterprise-adoption/'));
 });

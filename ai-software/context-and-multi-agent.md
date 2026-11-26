@@ -1,0 +1,59 @@
+---
+title: 上下文工程与多智能体：让 AI 理解项目并有效协作
+category: AI 软件工程
+updated_at: 2026-11-26
+level: 通识进阶
+nav_order: 2
+sidebar_title: 上下文与协作
+---
+
+# 上下文工程与多智能体：让 AI 理解项目并有效协作
+
+> **核心摘要**：上下文工程负责为 AI 在当前任务中准备合适的信息，多智能体协作则把工作分给具有不同职责的执行单元。二者能够改善复杂任务的组织方式，但也引入交接损耗、协调成本和权限管理问题。
+
+## 1. 概念解析与生活类比
+
+**上下文工程（Context Engineering）** 关注模型执行任务时能看到什么：业务要求、项目规范、相关文件、工具说明、历史结果，以及下一步所需资料。它比“把提示词写得更漂亮”覆盖的范围更广。Anthropic 在 2025 年的工程文章中将其描述为对推理时信息的组织与维护。[[1]](https://www.anthropic.com/research/effective-context-engineering-for-ai-agents)
+
+可以把上下文看作项目会议的材料包。把公司所有文件都放进会议室，不等于讨论者就能找到正确版本；材料需要说明来源、适用范围和更新时间。少了一份关键约定，或者混进一份过时需求，都可能影响决定。
+
+**多智能体协作（Multi-Agent Collaboration）** 则像由调研、实现和验收岗位共同完成任务。每个岗位都需要清晰的输入和交付物，最后仍需要有人把结果合在一起。这里的“岗位”是软件系统的分工，不代表各个 AI 拥有独立的人格或责任主体地位。
+
+## 2. 核心价值与应用场景
+
+建议按任务需要准备资料，而不是按资料数量评价准备程度：
+
+| 工作场景 | 应提供的上下文 | 建议交付物 |
+| --- | --- | --- |
+| 修复历史问题 | 复现步骤、相关日志、已有约束 | 问题原因、变更和验证结果 |
+| 跨团队改造 | 共同目标、接口约定、各自负责范围 | 任务划分与兼容性检查 |
+| 独立审查 | 原始要求、实际改动、验收标准 | 可复核的发现及证据 |
+
+把多个智能体用于不同模块之前，应先确认这些模块能否独立推进。若两个执行者反复修改同一份文件，沟通和合并成本可能超过并行带来的好处。
+
+工具连接也需要区分“能访问”与“该访问”。**模型上下文协议（MCP）** 为应用与外部工具、资源之间的连接提供标准化结构；接入工具本身不等于模型已经正确理解业务资料。[[2]](https://modelcontextprotocol.io/docs/2026-07-28/learn/architecture)
+
+## 3. 最新演进与代表性实践（2025–2026）
+
+### 2025 年 6 月：多智能体研究系统的经验
+
+Anthropic 公开的 Research 系统由主智能体规划、多个执行单元开展并行调研，再整理结果。这是信息研究场景的实践，不应把它的实验收益直接套用到代码开发；更值得借鉴的是职责划分与结果交接。[[3]](https://www.anthropic.com/research/multi-agent-research-system)
+
+### 2026 年 2 月：共享代码库中的并行实验
+
+Anthropic 的编译器实验使用多个智能体在共享代码库上工作，并强调测试设计、任务拆分及协作上限。它提供了复杂软件任务的探索性证据，不能被解读为“增加智能体数量就能稳定替代整个团队”。[[4]](https://www.anthropic.com/research/building-c-compiler)
+
+对企业更实用的迁移路径是：先让单个智能体在明确范围内完成任务，再引入有独立价值的审查或调查角色。只有可以辨认出交接收益时，才扩大协作结构。这是本文的实施建议，不是上述实验已经证明的通用最优方案。
+
+## 4. 常见认知误区与使用边界
+
+- **误区一：上下文越多，结果必然越好。** 先确认材料是否相关、是否过时、能否追溯；不应把堆积文件当成治理措施。
+- **误区二：多个 AI 同意，就相当于独立证明。** 如果它们共享相同的错误前提，结论仍可能同时出错。关键结果应结合独立的测试、真实记录或人工复核。
+- **误区三：工具协议会自动处理所有授权问题。** 组织仍需决定谁可以访问什么、哪些操作需要审批，以及如何追踪执行记录。
+
+## 5. 参考来源（Sources）
+
+- [1] [Effective context engineering for AI agents](https://www.anthropic.com/research/effective-context-engineering-for-ai-agents) — Anthropic，2025-09-29。
+- [2] [Architecture overview](https://modelcontextprotocol.io/docs/2026-07-28/learn/architecture) — Model Context Protocol 官方文档，2026-07-28 版本。
+- [3] [How we built our multi-agent research system](https://www.anthropic.com/research/multi-agent-research-system) — Anthropic，2025-06-13。
+- [4] [Building a C compiler with a team of parallel Claudes](https://www.anthropic.com/research/building-c-compiler) — Anthropic，2026-02-05。

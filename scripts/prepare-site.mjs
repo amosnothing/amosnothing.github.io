@@ -99,6 +99,20 @@ export async function prepare() {
   }
   const aiIndex = matter(await readFile(path.join(root, 'ai-knowledge-base/index.md'), 'utf8'));
   await write('ai-knowledge-base/index.md', page(aiIndex.data.title, convertContent(aiIndex.content, documentRoutes)));
+  const software = [];
+  const softwareSources = await Promise.all((await files(path.join(root, 'ai-software')))
+    .filter(file => file.endsWith('.md') && path.basename(file) !== 'index.md')
+    .map(async file => ({ file, source: matter(await readFile(file, 'utf8')) })));
+  softwareSources.sort((a, b) => a.source.data.nav_order - b.source.data.nav_order || a.file.localeCompare(b.file));
+  for (const { file, source } of softwareSources) {
+    const slug = path.basename(file, '.md');
+    if (!/^[a-z]+(?:-[a-z]+)*$/.test(slug)) throw new Error(`Invalid software article filename: ${file}`);
+    const link = `/ai-software/${slug}/`;
+    software.push({ text: source.data.sidebar_title, link });
+    await write(link.slice(1) + 'index.md', matter.stringify(source.content, source.data));
+  }
+  const softwareIndex = matter(await readFile(path.join(root, 'ai-software/index.md'), 'utf8'));
+  await write('ai-software/index.md', page(softwareIndex.data.title, softwareIndex.content + '\n' + softwareSources.map(({ file, source }) => `- [${source.data.title}](/ai-software/${path.basename(file, '.md')}/)`).join('\n')));
   const weekly = [];
   for (const filename of (await files(path.join(root, 'ai-weekly'))).filter(f => f.endsWith('.md')).reverse()) {
     const name = path.basename(filename, '.md');
@@ -151,7 +165,7 @@ export async function prepare() {
   await write('public/.nojekyll', '');
   await write('public/robots.txt', `User-agent: *\nAllow: /\nSitemap: ${origin}/sitemap.xml\n`);
   await write('public/feed.xml', `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>随笔与 AI 知识库</title><link>${origin}</link><description>技术随笔</description>${posts.map(p => `<item><title>${xml(p.text)}</title><link>${origin}${p.link}</link><guid>${origin}${p.link}</guid><pubDate>${new Date(p.date).toUTCString()}</pubDate></item>`).join('')}</channel></rss>`);
-  await writeFile(path.join(root, '.vitepress/navigation.json'), JSON.stringify({ groups, posts, weekly, documentRoutes, legacyRoutes }, null, 2) + '\n');
+  await writeFile(path.join(root, '.vitepress/navigation.json'), JSON.stringify({ groups, posts, weekly, software, documentRoutes, legacyRoutes }, null, 2) + '\n');
   console.log(`Prepared ${groups.reduce((n, g) => n + g.items.length, 0)} AI articles and ${posts.length} published posts.`);
 }
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await prepare();

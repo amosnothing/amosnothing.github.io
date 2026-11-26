@@ -12,6 +12,10 @@
 - 兼容既有文章 URL、`aboutme/`、`tags/`、`page2/` 至 `page4/` 和 RSS 地址。随笔日期按原 Jekyll 的 UTC 元数据及 Asia/Shanghai 站点时区生成。
 - 原 Jekyll 配置、首页、标签页、依赖和测试保存在 `_legacy/jekyll/`；Beautiful Jekyll 模板仍保存在原归档中，仅供追溯，不参加构建。
 
+## AI 软件工程专题
+
+`ai-software/` 收录编程智能体、上下文协作、测试审查和企业落地等专题。采用英文 Markdown 文件名作为稳定网址，`sidebar_title` 设置简短菜单，`nav_order` 控制阅读顺序。`index.md` 提供导读，文章目录由构建脚本生成。新增文章需保留通识文档结构、更新日期与可核验来源，并区分历史案例、当前产品状态和编者建议。
+
 ## AI 资讯周报
 
 `ai-weekly/` 每个自然周只有一个 Markdown 文件，以北京时间所属周的 ISO 周所属年份与两位周数命名，例如 `2026-week48.md`。文档包含 `title`、`week_start`、`week_end` 和 `updated_at` 元数据。后续补充本周消息时更新同一文件；新一周才新建文件。跨年时使用 ISO 周所属年份，例如 2025-12-29 属于 `2026-week01`。线上网址仍使用 `week_start` 的日期，保留既有链接。

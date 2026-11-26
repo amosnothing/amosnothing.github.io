@@ -292,3 +292,18 @@ test('AI general-knowledge section is renamed without changing the site brand or
   assert.ok(overview.includes('通识概览'));
   assert.ok((await read('index.html')).includes('AI 通识'));
 });
+
+
+test('every generated page keeps its referenced local scripts, styles and images', async () => {
+  let checked = 0;
+  for (const file of (await files(dist)).filter(file => file.endsWith('.html'))) {
+    const html = await readFile(file, 'utf8');
+    for (const [, , url] of html.matchAll(/<(script|link|img)\b[^>]*?(?:src|href)="([^"]+)"/g)) {
+      if (!url.startsWith('/') || url.startsWith('//')) continue;
+      const resource = decodeURIComponent(url.split(/[?#]/)[0]);
+      assert.ok(await exists(path.join(dist, resource)), `${path.relative(dist, file)} -> ${url}`);
+      checked++;
+    }
+  }
+  assert.ok(checked > 100, 'Check resources across rendered pages');
+});

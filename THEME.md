@@ -10,7 +10,8 @@
 - `scripts/prepare-site.mjs` 在构建前生成 `.vitepress/content/` 与导航数据，不要手工编辑生成目录。原始文档不被改写。
 - 转换原 Jekyll 链接与目录语法；页内目录由 VitePress 默认主题生成。
 - 兼容既有文章 URL、`aboutme/`、`tags/`、`page2/` 至 `page4/` 和 RSS 地址。随笔日期按原 Jekyll 的 UTC 元数据及 Asia/Shanghai 站点时区生成。
-- 原 Jekyll 配置、首页、标签页、依赖和测试保存在 `_legacy/jekyll/`；Beautiful Jekyll 模板仍保存在原归档中，仅供追溯，不参加构建。
+- 已移除不参与构建的 Jekyll 主题归档、Ruby 依赖配置、旧评论配置、旧主题 CSS/JS、主题截图与更新日志；历史版本可通过 Git 记录追溯。RSS 由构建脚本生成，不再维护根目录旧模板。原文章仍使用的链接转换逻辑与旧网址兼容测试保留。
+- `assets/img/` 保留站点图标和历史图片。实际展示使用 VitePress 官方主题构建的资源；回归检查会验证页面引用的本地脚本、样式和图片均存在。
 
 ## AI 软件工程专题
 

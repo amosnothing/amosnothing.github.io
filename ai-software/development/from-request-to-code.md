@@ -43,7 +43,7 @@ sidebar_title: 从需求到代码
 
 这句话至少包含四件事：修改搜索行为、处理首尾空格、保持大小写规则、增加验证。模型会结合这些要求、已有代码和后续反馈，形成对任务的判断。这里的“理解”可以从行为上检验：它是否找对入口、保留约束、处理正确输入，并给出可核对的结果。
 
-大语言模型会把输入转换为 token，再根据上下文生成后续内容。token 是模型处理文本的单位，可能是一个词的一部分，也可能包含字符或标点，并不等于“一个词一个 token”。指令训练则帮助模型学习按要求组织回答；InstructGPT 论文是这种训练思路的历史实例，不能据此推断今天每个模型的完整训练配方。[[1]](https://openai.com/index/unrolling-the-codex-agent-loop/) [[2]](https://cdn.openai.com/papers/Training_language_models_to_follow_instructions_with_human_feedback.pdf)
+在计算层面，大语言模型把输入转换为 token，再根据上下文生成后续内容。token 是处理文本的单位，并不等于一个完整的词。训练让模型学到语言和代码之间的关系，指令训练进一步帮助它按任务要求组织回答。对于这次搜索修复，需求中的每项限制都需要结合项目材料来落实。[[1]](https://openai.com/index/unrolling-the-codex-agent-loop/) [[2]](https://cdn.openai.com/papers/Training_language_models_to_follow_instructions_with_human_feedback.pdf)
 
 模型不会直接知道你没说出的业务约定。例如，“只输入空格时应该返回全部商品还是没有结果”，上面的需求尚未说明。合理做法是先查现有约定；资料仍不足时，再向你确认。流畅地复述需求，不足以证明已经理解全部细节。
 
@@ -96,15 +96,15 @@ API 可以理解成两端按约定收发消息的接口。下面把搜索修复�
 
 ## 3. 最新演进与代表性实践
 
-### 公开工程资料已经拆开了客户端与服务端的分工
+### 一次请求怎样变成界面里的进度
 
-OpenAI 于 2026 年 1 月发布的 Codex 工程文章，展示了客户端构建结构化请求、服务端组织模型输入，以及工具结果如何进入后续请求。它描述的 CLI 实现使用 Responses API，并展示了流式响应。这里引用的是该文公开的机制；不同时间、版本和入口的接口及传输细节，应分别核对。[[1]](https://openai.com/index/unrolling-the-codex-agent-loop/)
+前面的搜索修复任务，会被拆成多次结构化请求。在 Codex CLI 公开的实现中，客户端通过 Responses API 发送指令、材料和工具定义；服务端组织模型输入，再把生成的文字或工具调用分段返回。工具执行结果随后进入新的请求，让模型继续工作。[[1]](https://openai.com/index/unrolling-the-codex-agent-loop/)
 
 界面上逐步出现的文字，是服务结果可以分段传回、由客户端陆续展示的一种表现。用户看到的进度文字和操作记录，也不能当成模型内部全部计算的逐字转录。
 
 ### 为什么长任务要整理上下文
 
-代码、日志和对话不断增加，单次模型处理的信息有长度限制。上下文压缩可以用更少的 token 携带后续工作需要的状态；它不是保证所有历史细节都被无损保留。OpenAI 的 Compaction 文档说明了这种机制。[[5]](https://developers.openai.com/api/docs/guides/compaction)
+代码、日志和对话不断增加，单次模型处理的信息有长度限制。上下文压缩可以用更少的 token 携带后续工作需要的状态，但不能保证所有历史细节都被无损保留。[[5]](https://developers.openai.com/api/docs/guides/compaction)
 
 可以把它想成工程师交接班时整理工作记录：目标、已完成修改、失败原因和待办事项应留下。关键约定最好同时保存在项目资料和测试中，需要时再读取核对。
 

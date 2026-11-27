@@ -1,7 +1,7 @@
 ---
 title: CC、Codex、DeepSeek Harness 是怎么和模型配合干活的
 category: AI 软件工程
-updated_at: 2026-11-26
+updated_at: 2026-11-27
 level: 通识进阶
 nav_order: 3
 sidebar_title: Harness 原理
@@ -77,7 +77,7 @@ Harness 这个词可以先理解成“让模型干活的那套程序”。它准
 
 ## 3. 最新演进与代表性实践
 
-以下产品说明核对于 2026 年 11 月 26 日，重点看各自公开的设计，不作能力排名。
+理解了前面的循环，就可以看不同工具怎样组织它：如何准备上下文、接入执行工具，以及把结果带到下一轮。
 
 ### Claude Code：把项目工具接到 Claude 上
 
@@ -87,17 +87,17 @@ Claude Code 官方文档将其定位为围绕模型的一层程序，管理工�
 
 ### Codex：公开拆解请求和结果的往返
 
-OpenAI 在 2026 年 1 月发布的工程文章中，展示了 Codex 如何组织发给 Responses API 的请求，以及如何把工具结果带入下一次请求；文章还介绍了缓存与上下文压缩。这里解释的是公开设计，具体客户端与版本的细节可能继续变化。[[2]](https://openai.com/index/unrolling-the-codex-agent-loop/)
+Codex CLI 公开的实现通过 Responses API 请求模型，再把工具执行结果带入下一次请求。连续工作时，缓存用于减少重复计算，上下文压缩用于控制材料长度。具体接口与处理方式需要结合所用客户端版本确认。[[2]](https://openai.com/index/unrolling-the-codex-agent-loop/)
 
 这也解释了一个常见现象：聊天界面里仍能翻到早期内容，模型当前使用的材料却可能已经经过压缩。历史记录、当前上下文和仓库文件，是三份需要分别理解的信息。
 
 ### DeepSeek Harness：框架和模型可以分开配置
 
-DeepSeek Harness 的官方仓库采用“一切皆插件”的设计。截至核对时，README 仍标为开发者预览，并提示后续可能出现破坏兼容性的变更。[[3]](https://github.com/deepseek-ai/deepseek-harness/blob/master/README.zh.md)
+DeepSeek Harness 的官方仓库采用“一切皆插件”的设计，将能力组织成可扩展的模块。README 将其标为开发者预览，并提示后续可能出现破坏兼容性的变更，接入时需要查看对应版本说明。[[3]](https://github.com/deepseek-ai/deepseek-harness/blob/master/README.zh.md)
 
 它还区分官方模型和自定义模型服务。官方说明写明，自定义模型由用户配置相应 API，输入会发送给所配置的模型。这意味着使用 DeepSeek Harness 时，应单独确认当前选中的模型服务。[[5]](https://www.deepseek.com/harness/privacy/)
 
-若自己开发接入程序，还要核对模型接口的具体约定。例如 DeepSeek 当前的 Chat Completion 思考模式，在请求携带 `tools` 时，要求按文档保留并回传历史 `reasoning_content`。只替换服务地址，未必完成了适配；这条要求也不能套到所有厂商和所有接口上。[[6]](https://api-docs.deepseek.com/guides/thinking_mode/)
+框架允许更换模型服务，不代表接入时只需要替换地址。不同接口可能要求回传工具调用编号、执行结果以及特定的历史字段；缺少其中一项，后续请求就可能无法衔接。开发接入程序时，应按目标接口核对这些约定。[[6]](https://api-docs.deepseek.com/guides/thinking_mode/)
 
 ## 4. 常见认知误区与使用边界
 

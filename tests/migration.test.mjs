@@ -85,8 +85,8 @@ test('11 AI articles render topic-specific sections, evidence labels and verific
     assert.ok(headings.length >= 4, `${relative}: explain the topic and include sources`);
     for (const heading of headings) assert.ok(html.includes(heading), `${relative}: ${heading}`);
     assert.ok(data.last_verified_at && data.verification_scope && data.change_summary, relative);
-    const verified = new Date(data.last_verified_at).toISOString().slice(0, 10);
-    assert.ok(html.includes(`核验日期：${verified}`), relative);
+    assert.ok(Number.isFinite(+new Date(data.last_verified_at)), relative);
+    assert.doesNotMatch(content, /核验日期[：:]/, relative);
     const generated = matter(await readFile(path.join(root, '.vitepress/content', relative.replace(/\.html$/, '.md')), 'utf8'));
     for (const key of ['last_verified_at', 'verification_scope', 'change_summary']) {
       assert.deepEqual(generated.data[key], data[key], `${relative}: ${key} survives generation`);
@@ -102,6 +102,43 @@ test('11 AI articles render topic-specific sections, evidence labels and verific
     for (const url of citations) assert.ok(html.includes(url.replaceAll('&', '&amp;')), `${relative}: ${url}`);
   }
 });
+test('general-knowledge articles connect mechanisms, research scenarios and limitations', async () => {
+  const matter = (await import('gray-matter')).default;
+  const articles = (await files(path.join(root, 'ai-knowledge-base'))).filter(file => file.endsWith('.md') && !file.endsWith('/index.md'));
+  for (const file of articles) {
+    const { content } = matter(await readFile(file, 'utf8'));
+    const body = content.split(/^## 参考来源/m)[0];
+    assert.doesNotMatch(body, /思考|理解|撒谎|刻意|短期工作记忆/, file);
+    assert.match(body, /教学构造/, `${file}: constructed research examples must be identified`);
+    assert.match(body, /^## 常见误区[：:]/m, file);
+    assert.match(body, /^## 对科研实践的直接启示/m, file);
+    assert.doesNotMatch(body, /硬性写作约束|受众定位|术语控制|六条自查/, `${file}: internal writing checks stay private`);
+  }
+});
+
+test('public AI pages omit editorial review dates while retaining references', async () => {
+  const matter = (await import('gray-matter')).default;
+  let articles = 0;
+  for (const directory of ['ai-knowledge-base', 'ai-software', 'ai-weekly']) {
+    for (const file of (await files(path.join(root, directory))).filter(file => file.endsWith('.md'))) {
+      const { data, content } = matter(await readFile(file, 'utf8'));
+      const body = content.split(/^## (?:5\. )?参考来源/m)[0];
+      assert.doesNotMatch(body, /核验日期[：:]|核对于\s*\d{4}|每篇顶部.*核验|本轮检索|本页原有.*已移除/, file);
+      const route = directory === 'ai-weekly'
+        ? `ai-weekly/${new Date(data.week_start).toISOString().slice(0, 10)}/index.html`
+        : renderedDocument(file);
+      const html = await read(route);
+      assert.doesNotMatch(html, /核验日期[：:]/, route);
+      if (path.basename(file) !== 'index.md') {
+        assert.ok(/^## (?:5\. )?参考来源/m.test(content), file);
+        assert.ok(html.includes('参考来源'), route);
+        articles++;
+      }
+    }
+  }
+  assert.equal(articles, 21);
+});
+
 test('all generated internal page links resolve and no Liquid syntax leaks', async () => {
   for (const file of (await files(dist)).filter(f => f.endsWith('.html'))) {
     const html = await readFile(file, 'utf8');
@@ -246,7 +283,7 @@ test('English routes, short sidebar labels and full document headings remain con
     }
   }
   const html = await read('ai-knowledge-base/fundamentals/context-window/index.html');
-  assert.ok(html.includes('上下文窗口（Context Window）：AI的短期工作记忆边界'));
+  assert.ok(html.includes('上下文窗口（Context Window）：输入范围、计算成本与证据覆盖'));
   assert.ok(html.includes('href="/ai-knowledge-base/fundamentals/context-window/"'));
   for (const [oldRoute, target] of Object.entries(navigation.legacyRoutes)) {
     const legacy = await read(oldRoute.slice(1) + 'index.html');
@@ -316,7 +353,8 @@ test('reviewed enterprise cases use dated primary evidence within a six-month wi
     earliest.setUTCMonth(earliest.getUTCMonth() - 6);
     assert.ok(Number.isFinite(+start) && Number.isFinite(+end) && start >= earliest && start <= end, name);
     assert.equal(+new Date(data.reviewed_at), +end, name);
-    assert.equal(+new Date(data.updated_at), +end, name);
+    const updated = new Date(data.updated_at);
+    assert.ok(Number.isFinite(+updated) && updated >= new Date(data.reviewed_at), `${name}: editorial updates may follow source review`);
     assert.ok(data.evidence_type && data.reviewed_sources?.length, name);
     const cited = new Set([...content.matchAll(/\[\[\d+\]\]\((https:\/\/[^)]+)\)/g)].map(m => m[1]));
     assert.deepEqual(cited, new Set(data.reviewed_sources.map(s => s.url)), name);
@@ -328,7 +366,7 @@ test('reviewed enterprise cases use dated primary evidence within a six-month wi
   }
   const overview = await read('ai-software/enterprise-adoption/index.html');
   for (const stale of ['arxiv.org/abs/2402.09171', 'openai.com/index/rakuten/', 'github-copilots-impact-in-the-enterprise-with-accenture']) assert.ok(!overview.includes(stale), stale);
-  assert.ok(overview.includes('暂不新增腾讯案例文章'));
+  assert.doesNotMatch(overview, /暂不新增腾讯案例文章|本轮检索|本页原有/, 'Public case overview explains the evidence rather than editing history');
   const bytedance = await read('ai-software/bytedance-testing/index.html');
   for (const qualification of ['允许少量后续修改', '2025 年 3 月', '不代表缺陷检出率']) assert.ok(bytedance.includes(qualification), qualification);
   assert.ok((await read('ai-software/alibaba-rd-practice/index.html')).includes('全流程操作明确以演示呈现'));

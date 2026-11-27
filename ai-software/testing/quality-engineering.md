@@ -1,7 +1,7 @@
 ---
 title: AI 测试与代码审查：从生成检查项到验证实际行为
 category: AI 软件工程
-updated_at: 2026-11-26
+updated_at: 2026-11-27
 level: 通识进阶
 nav_order: 3
 sidebar_title: 测试与代码审查
@@ -21,11 +21,11 @@ sidebar_title: 测试与代码审查
 
 ## 2. 核心价值与应用场景
 
-**测试生成** 适合先从已有规则出发补充遗漏场景。例如会员优惠应检查正常用户、过期资格、重复提交和边界金额；测试预期应来自业务规则，而不是从现有实现反推。
+**测试生成** 适合先从已有规则出发补充遗漏场景。假设一项教学规则是“有效会员订单满 100 元减 10 元，每单只可使用一次”，测试就应覆盖：有效会员订单 100 元应减 10 元，99 元不减，过期会员不享受，再次提交同一订单不会重复减免。预期结果由这条规则确定，而不是从当前实现反推。
 
 **变更审查** 可以帮助定位与需求不一致的修改，但有效发现应能说明影响、触发条件及证据。只有“这里可能有风险”的泛泛提醒，不足以支撑发布决策。
 
-Meta 在 2024 年公开的 TestGen-LLM 通过构建、稳定执行和覆盖改进等过滤环节筛选生成测试，并介绍了 Instagram 与 Facebook 场景的部署。这一历史实践的关键是先验证生成物，再考虑采用。[[1]](https://arxiv.org/abs/2402.09171)
+生成测试之后，还要筛选：代码能否构建、能否稳定执行、是否补到了有意义的检查。构建、稳定性与覆盖改进过滤已经用于公开的测试生成实践，但团队仍需另行判断测试是否覆盖业务要求。[[1]](https://arxiv.org/abs/2402.09171)
 
 对于实际试点，可以记录新增发现是否可复现、人工复核花费多少时间，以及同类问题是否再次出现。不要仅用生成的测试数量评价质量。
 
@@ -33,7 +33,7 @@ Meta 在 2024 年公开的 TestGen-LLM 通过构建、稳定执行和覆盖改�
 
 ### 从检查最终回答到检查执行过程
 
-截至本文更新时，Microsoft Research 的 Agent-Pex 官方项目页介绍了从提示与执行轨迹中提取规则、自动评价轨迹，并生成有针对性的测试。该页面未标注明确发布日期；这里把它作为已公开研究方向介绍，不将其称为已普及的商业能力。[[2]](https://www.microsoft.com/en-us/research/project/agent-pex-automated-evaluation-and-testing-of-ai-agents/)
+如果受测对象本身是 AI 智能体，只检查最后一句回答还不够。比如它声称“已经处理订单”，还要检查有没有访问正确记录、有没有在未获批准时写入。相关研究探索从提示与执行轨迹中提取规则、评价轨迹，并生成针对性测试，以检查这些过程中的行为。[[2]](https://www.microsoft.com/en-us/research/project/agent-pex-automated-evaluation-and-testing-of-ai-agents/)
 
 ### 2026 年 11 月：审查、修复与批准逐步串联
 
@@ -50,6 +50,6 @@ Claude Ship 的公告将已有审查功能与测试阶段的修复、策略批�
 
 ## 5. 参考来源（Sources）
 
-- [1] [Automated Unit Test Improvement using Large Language Models at Meta](https://arxiv.org/abs/2402.09171) — Meta 作者研究论文，2024-02-14。
+- [1] [Automated Unit Test Improvement using Large Language Models at Meta](https://arxiv.org/abs/2402.09171) — Meta 作者研究论文，2024-02-14；介绍 TestGen-LLM 的生成与过滤流程。
 - [2] [Agent-Pex: Automated evaluation and testing of AI agents](https://www.microsoft.com/en-us/research/project/agent-pex-automated-evaluation-and-testing-of-ai-agents/) — Microsoft Research，项目页未标注发布日期，核验于 2026-11-26。
 - [3] [Introducing Claude Ship](https://claude.com/resources/articles/introducing-claude-ship) — Anthropic，2026-11-23。

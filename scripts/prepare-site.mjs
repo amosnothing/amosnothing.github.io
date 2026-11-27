@@ -90,6 +90,9 @@ export async function prepare() {
       await write(link.slice(1) + 'index.md', page(source.data.title, convertContent(source.content, documentRoutes), {
         description: source.data.category, category: source.data.category,
         updated_at: source.data.updated_at, level: source.data.level,
+        last_verified_at: source.data.last_verified_at,
+        verification_scope: source.data.verification_scope,
+        change_summary: source.data.change_summary,
       }));
     }
     const link = documentRoutes[`${directory}/index.md`];

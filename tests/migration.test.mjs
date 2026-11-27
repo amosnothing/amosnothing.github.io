@@ -68,7 +68,8 @@ test('all previously published directory routes and utility endpoints remain ava
   for (const route of routes) assert.ok(await exists(path.join(dist, decodeURI(route), 'index.html')), route);
   for (const f of ['404.html', 'feed.xml', 'robots.txt', 'sitemap.xml']) assert.ok(await exists(path.join(dist, f)), f);
 });
-test('11 AI articles retain sources and five sections, using the official theme and outline', async () => {
+test('11 AI articles render topic-specific sections, evidence labels and verification metadata', async () => {
+  const matter = (await import('gray-matter')).default;
   const source = path.join(root, 'ai-knowledge-base');
   const articles = (await files(source)).filter(f => f.endsWith('.md') && !f.endsWith('/index.md'));
   assert.equal(articles.length, 11);
@@ -76,10 +77,26 @@ test('11 AI articles retain sources and five sections, using the official theme 
     const relative = renderedDocument(file);
     const html = await read(relative);
     assert.ok(html.includes('参考来源') && html.includes('核心摘要'), relative);
-    for (const section of ['概念解析与生活类比', '核心价值与应用场景', '最新演进与代表性实践', '常见认知误区与使用边界']) assert.ok(html.includes(section), `${relative}: ${section}`);
     assert.ok(html.includes('VPDoc') && html.includes('本文目录'), relative);
     assert.ok(!html.includes('{:toc}') && !html.includes('{%'), relative);
     const original = await readFile(file, 'utf8');
+    const { data, content } = matter(original);
+    const headings = [...content.matchAll(/^## (.+)$/gm)].map(match => match[1]);
+    assert.ok(headings.length >= 4, `${relative}: explain the topic and include sources`);
+    for (const heading of headings) assert.ok(html.includes(heading), `${relative}: ${heading}`);
+    assert.ok(data.last_verified_at && data.verification_scope && data.change_summary, relative);
+    const verified = new Date(data.last_verified_at).toISOString().slice(0, 10);
+    assert.ok(html.includes(`核验日期：${verified}`), relative);
+    const generated = matter(await readFile(path.join(root, '.vitepress/content', relative.replace(/\.html$/, '.md')), 'utf8'));
+    for (const key of ['last_verified_at', 'verification_scope', 'change_summary']) {
+      assert.deepEqual(generated.data[key], data[key], `${relative}: ${key} survives generation`);
+    }
+    const cited = [...content.matchAll(/\[\[(\d+)\]\]\((https:\/\/[^)]+)\)/g)];
+    const references = [...content.matchAll(/^- \[(\d+)\] \[[^\n]+?\]\((https:\/\/[^)]+)\)([^\n]*)/gm)];
+    assert.deepEqual(new Map(cited.map(([, n, url]) => [n, url])), new Map(references.map(([, n, url]) => [n, url])), `${relative}: sources support the citation map`);
+    for (const [, , , label] of references) {
+      assert.match(label, /类型：[^；]+；证据等级：(E[123]|N)；支持：.+/, relative);
+    }
     const citations = [...original.matchAll(/\[\[\d+\]\]\((https?:\/\/[^)]+)\)/g)].map(m => m[1]);
     assert.ok(citations.length > 0);
     for (const url of citations) assert.ok(html.includes(url.replaceAll('&', '&amp;')), `${relative}: ${url}`);

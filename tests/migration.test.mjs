@@ -170,8 +170,14 @@ test('weekly news uses one ISO-week-named file per week and appears in navigatio
     for (const url of urls) assert.ok(html.includes(url), `${name}: ${url}`);
   }
   const first = await read('ai-weekly/2026-11-23/index.html');
-  for (const topic of ['蛋白质设计', 'Claude Ship', 'Working with AI', '量子算法', 'Shirudo', 'RoboTrack']) assert.ok(first.includes(topic), topic);
-  assert.equal((first.match(/<h2 id="_[1-6]-/g) || []).length, 6);
+  for (const topic of ['蛋白质设计', 'Claude Ship', 'Working with AI', '量子算法', 'Shirudo', 'RoboTrack', 'Private Inference', 'Install as app', 'SWE-2.1', 'Skills over MCP', 'Niji 8', 'Siren']) assert.ok(first.includes(topic), topic);
+  assert.equal((first.match(/<h2 id="_\d+-/g) || []).length, 12);
+  assert.ok(first.includes('2026 年 11 月 27 日（北京时间）'));
+  const updated = matter(await readFile(path.join(root, 'ai-weekly/2026-week48.md'), 'utf8'));
+  assert.equal(new Date(updated.data.updated_at).toISOString().slice(0, 10), '2026-11-27');
+  const citations = [...updated.content.matchAll(/\[\[(\d+)\]\]\((https:\/\/[^)]+)\)/g)];
+  const references = [...updated.content.matchAll(/^- \[(\d+)\] \[[^\n]+?\]\((https:\/\/[^)]+)\)/gm)];
+  assert.deepEqual(new Map(citations.map(([, n, url]) => [n, url])), new Map(references.map(([, n, url]) => [n, url])));
 });
 
 

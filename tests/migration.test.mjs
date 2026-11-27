@@ -88,7 +88,7 @@ test('11 AI articles render topic-specific sections, evidence labels and verific
     assert.ok(Number.isFinite(+new Date(data.last_verified_at)), relative);
     assert.doesNotMatch(content, /核验日期[：:]/, relative);
     const generated = matter(await readFile(path.join(root, '.vitepress/content', relative.replace(/\.html$/, '.md')), 'utf8'));
-    for (const key of ['last_verified_at', 'verification_scope', 'change_summary']) {
+    for (const key of ['last_verified_at', 'verification_scope', 'change_summary', 'core_terms']) {
       assert.deepEqual(generated.data[key], data[key], `${relative}: ${key} survives generation`);
     }
     const cited = [...content.matchAll(/\[\[(\d+)\]\]\((https:\/\/[^)]+)\)/g)];
@@ -106,10 +106,17 @@ test('general-knowledge articles connect mechanisms, research scenarios and limi
   const matter = (await import('gray-matter')).default;
   const articles = (await files(path.join(root, 'ai-knowledge-base'))).filter(file => file.endsWith('.md') && !file.endsWith('/index.md'));
   for (const file of articles) {
-    const { content } = matter(await readFile(file, 'utf8'));
+    const { data, content } = matter(await readFile(file, 'utf8'));
     const body = content.split(/^## 参考来源/m)[0];
+    assert.ok(Array.isArray(data.core_terms) && data.core_terms.length >= 1 && data.core_terms.length <= 5, `${file}: declare at most five core terms`);
+    assert.equal(new Set(data.core_terms).size, data.core_terms.length, file);
+    for (const term of data.core_terms) assert.ok(body.includes(`**${term}`), `${file}: introduce ${term} in prose`);
+    const sections = [...body.matchAll(/^## (.+)$/gm)].map(match => match[1]);
+    assert.match(sections[0], /^核心机制[：:]/, file);
+    assert.match(sections[1], /^常见误区[：:]/, file);
+    assert.match(sections[2], /^对科研实践的直接启示[：:]/, file);
     assert.doesNotMatch(body, /思考|理解|撒谎|刻意|短期工作记忆/, file);
-    assert.match(body, /教学构造/, `${file}: constructed research examples must be identified`);
+    assert.match(body, /假设|构造/, `${file}: constructed research examples must be identified`);
     assert.match(body, /^## 常见误区[：:]/m, file);
     assert.match(body, /^## 对科研实践的直接启示/m, file);
     assert.doesNotMatch(body, /硬性写作约束|受众定位|术语控制|六条自查/, `${file}: internal writing checks stay private`);
@@ -283,7 +290,7 @@ test('English routes, short sidebar labels and full document headings remain con
     }
   }
   const html = await read('ai-knowledge-base/fundamentals/context-window/index.html');
-  assert.ok(html.includes('上下文窗口（Context Window）：输入范围、计算成本与证据覆盖'));
+  assert.ok(html.includes('上下文窗口：输入容量、位置与计算成本'));
   assert.ok(html.includes('href="/ai-knowledge-base/fundamentals/context-window/"'));
   for (const [oldRoute, target] of Object.entries(navigation.legacyRoutes)) {
     const legacy = await read(oldRoute.slice(1) + 'index.html');

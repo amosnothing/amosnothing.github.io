@@ -93,6 +93,7 @@ export async function prepare() {
         last_verified_at: source.data.last_verified_at,
         verification_scope: source.data.verification_scope,
         change_summary: source.data.change_summary,
+        core_terms: source.data.core_terms,
       }));
     }
     const link = documentRoutes[`${directory}/index.md`];

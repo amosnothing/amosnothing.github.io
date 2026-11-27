@@ -247,9 +247,9 @@ test('legacy redirects preserve query and fragment and reject unsafe targets', a
 test('software engineering articles have sources, standard sections and short English navigation', async () => {
   const matter = (await import('gray-matter')).default;
   const articles = (await files(path.join(root, 'ai-software'))).filter(file => file.endsWith('.md') && !file.endsWith('/index.md'));
-  assert.equal(articles.length, 8);
+  assert.equal(articles.length, 9);
   assert.deepEqual(navigation.software.flatMap(group => group.items.map(item => item.link)), [
-    '/ai-software/coding-agents/', '/ai-software/context-and-multi-agent/', '/ai-software/agent-harness/', '/ai-software/image-video-understanding/', '/ai-software/quality-engineering/', '/ai-software/enterprise-adoption/',
+    '/ai-software/coding-agents/', '/ai-software/context-and-multi-agent/', '/ai-software/agent-harness/', '/ai-software/image-video-understanding/', '/ai-software/from-request-to-code/', '/ai-software/quality-engineering/', '/ai-software/enterprise-adoption/',
     '/ai-software/alibaba-rd-practice/', '/ai-software/bytedance-testing/',
   ]);
   const index = await read('ai-software/index.html');
@@ -311,7 +311,7 @@ test('reviewed enterprise cases use dated primary evidence within a six-month wi
 test('software topics have collapsible groups, group landing pages and stable article URLs', async () => {
   const matter = (await import('gray-matter')).default;
   const expected = [
-    ['development', '研发技术', ['coding-agents', 'context-and-multi-agent', 'agent-harness', 'image-video-understanding']],
+    ['development', '研发技术', ['coding-agents', 'context-and-multi-agent', 'agent-harness', 'image-video-understanding', 'from-request-to-code']],
     ['testing', '测试质量', ['quality-engineering']],
     ['enterprise', '企业实践', ['enterprise-adoption', 'alibaba-rd-practice', 'bytedance-testing']],
   ];
@@ -334,7 +334,7 @@ test('software topics have collapsible groups, group landing pages and stable ar
       const html = await read(route.slice(1) + 'index.html');
       const sections = [...html.matchAll(/<section class="VPSidebarItem level-0([^"]*)"/g)];
       assert.equal(sections.filter(([, classes]) => classes.split(' ').includes('collapsible')).length, 3);
-      assert.equal((html.match(/class="VPSidebarItem level-1 is-link/g) || []).length, 9);
+      assert.equal((html.match(/class="VPSidebarItem level-1 is-link/g) || []).length, 10);
       for (const [, title] of expected) assert.ok(html.includes(title));
     }
   }

@@ -17,6 +17,8 @@ level: 通识进阶
 
 ## 建议阅读顺序
 
+第一次接触 AI 编程工具，可以先读 [从需求到代码](/ai-software/from-request-to-code/)，用一次商品搜索修复理解客户端与模型服务端如何协作。
+
 先理解编程智能体，再了解上下文与协作方式。想知道 Claude Code、Codex、DeepSeek Harness 背后怎么运转，可以接着读 [Harness 工作原理](/ai-software/agent-harness/)，跟着一次 bug 修复看模型和工具如何往返。随后学习测试审查，最后比较企业案例与落地指标。
 
 如果工作中常用截图和操作录像排查问题，可以阅读 [AI 是如何识别图片与视频的](/ai-software/image-video-understanding/)，理解视觉特征、图文关联与视频时间关系，并学习怎样核验视觉分析结果。

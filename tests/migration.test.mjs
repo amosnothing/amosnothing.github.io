@@ -344,7 +344,7 @@ test('software topics have collapsible groups, group landing pages and stable ar
 test('AI general-knowledge section is renamed without changing the site brand or URLs', async () => {
   const { default: config } = await import('../.vitepress/config.mjs');
   assert.equal(config.title, 'AI 知识库');
-  assert.deepEqual(config.themeConfig.nav.find(item => item.link === '/ai-knowledge-base/'), { text: 'AI 通识', link: '/ai-knowledge-base/' });
+  assert.deepEqual(config.themeConfig.nav.find(item => item.link === '/ai-knowledge-base/'), { text: 'AI 通识', link: '/ai-knowledge-base/', activeMatch: '^/ai-knowledge-base/' });
   assert.deepEqual(config.themeConfig.sidebar['/ai-knowledge-base/'][0], { text: '通识概览', link: '/ai-knowledge-base/' });
   const overview = await read('ai-knowledge-base/index.html');
   assert.match(overview, /<title>AI 通识 \| AI 知识库<\/title>/);
@@ -366,4 +366,29 @@ test('every generated page keeps its referenced local scripts, styles and images
     }
   }
   assert.ok(checked > 100, 'Check resources across rendered pages');
+});
+
+test('top navigation highlights exactly the containing section on landing pages and articles', async () => {
+  const pages = new Map([
+    ['/', '/'], ['/aboutme/', '/aboutme/'],
+    ['/blog/', '/blog/'], ['/tags/', '/blog/'],
+    ['/page2/', '/blog/'], ['/page3/', '/blog/'], ['/page4/', '/blog/'],
+    ['/ai-knowledge-base/', '/ai-knowledge-base/'],
+    ['/ai-software/', '/ai-software/'], ['/ai-weekly/', '/ai-weekly/'],
+  ]);
+  for (const route of Object.values(navigation.documentRoutes)) {
+    if (route.startsWith('/ai-knowledge-base/')) pages.set(route, '/ai-knowledge-base/');
+    if (route.startsWith('/ai-software/')) pages.set(route, '/ai-software/');
+  }
+  for (const item of navigation.weekly) pages.set(item.link, '/ai-weekly/');
+  for (const post of navigation.posts) pages.set(post.link, '/blog/');
+  for (const [route, expected] of pages) {
+    const html = await read(route.slice(1) + 'index.html');
+    const links = [...html.matchAll(/<a\b[^>]*class="([^"]*\bVPNavBarMenuLink\b[^"]*)"[^>]*href="([^"]+)"[^>]*>/g)];
+    assert.equal(links.length, 6, route);
+    const active = links.filter(([, classes]) => classes.split(' ').includes('active'));
+    assert.deepEqual(active.map(([, , href]) => href), [expected], route);
+  }
+  const missing = await read('404.html');
+  assert.doesNotMatch(missing, /class="[^"]*VPNavBarMenuLink[^"\n]*\bactive\b/);
 });

@@ -12,10 +12,10 @@ export default defineConfig({
   themeConfig: {
     nav: [
       { text: '首页', link: '/' },
-      { text: 'AI 通识', link: '/ai-knowledge-base/' },
-      { text: 'AI 软件工程', link: '/ai-software/' },
-      { text: 'AI 资讯周报', link: '/ai-weekly/' },
-      { text: '随笔', link: '/blog/' },
+      { text: 'AI 通识', link: '/ai-knowledge-base/', activeMatch: '^/ai-knowledge-base/' },
+      { text: 'AI 软件工程', link: '/ai-software/', activeMatch: '^/ai-software/' },
+      { text: 'AI 资讯周报', link: '/ai-weekly/', activeMatch: '^/ai-weekly/' },
+      { text: '随笔', link: '/blog/', activeMatch: '^/(?:blog/|tags/|page\\d+/|\\d{4}-\\d{2}-\\d{2}-[^/]+/)' },
       { text: '关于我', link: '/aboutme/' },
     ],
     sidebar: {

@@ -125,6 +125,33 @@ test('default theme is unmodified, home cards and static local search ship', asy
   assert.ok((await read('blog/index.html')).includes('2024-08-27-diary'));
 });
 
+test('native last-updated footer uses article metadata without a custom theme', async () => {
+  const { default: config } = await import('../.vitepress/config.mjs');
+  const matter = (await import('gray-matter')).default;
+  assert.equal(config.lastUpdated, true);
+  assert.equal(config.themeConfig.lastUpdated.text, '最后更新');
+  assert.equal(config.themeConfig.lastUpdated.formatOptions.timeZone, 'Asia/Shanghai');
+  for (const directory of ['ai-knowledge-base', 'ai-software', 'ai-weekly']) {
+    for (const file of (await files(path.join(root, directory))).filter(file => file.endsWith('.md') && !file.endsWith('/index.md'))) {
+      const { data } = matter(await readFile(file, 'utf8'));
+      const route = directory === 'ai-weekly'
+        ? `ai-weekly/${new Date(data.week_start).toISOString().slice(0, 10)}/index.html`
+        : renderedDocument(file);
+      const html = await read(route);
+      assert.ok(html.includes('VPLastUpdated') && html.includes('最后更新'), route);
+      assert.equal(html.match(/<time\b[^>]*datetime="([^"]+)"/)[1], new Date(data.updated_at).toISOString(), route);
+    }
+  }
+  for (const frontmatter of [{}, { updated_at: '2026-11-27', lastUpdated: false }]) {
+    const page = { frontmatter };
+    config.transformPageData(page);
+    assert.equal(page.lastUpdated, undefined);
+  }
+  assert.throws(() => config.transformPageData({ frontmatter: { updated_at: 'invalid' }, relativePath: 'invalid.md' }), /Invalid updated_at: invalid\.md/);
+  const home = await read('index.html');
+  assert.ok(!home.includes('VPLastUpdated'));
+});
+
 test('the generated official local-search index finds document topics', async () => {
   const { createRequire } = await import('node:module');
   const { pathToFileURL } = await import('node:url');

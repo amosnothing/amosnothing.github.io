@@ -7,6 +7,14 @@ export default defineConfig({
   description: '面向职场人与学习者的 AI 原理、前沿能力、应用实践与安全合规文档。',
   srcDir: './.vitepress/content',
   cleanUrls: false,
+  lastUpdated: true,
+  transformPageData(pageData) {
+    const { updated_at, lastUpdated } = pageData.frontmatter;
+    if (!updated_at || lastUpdated === false) return;
+    const timestamp = new Date(updated_at).getTime();
+    if (!Number.isFinite(timestamp)) throw new Error(`Invalid updated_at: ${pageData.relativePath}`);
+    pageData.lastUpdated = timestamp;
+  },
   sitemap: { hostname: 'https://amosnothing.github.io' },
   head: [['link', { rel: 'icon', href: '/assets/img/favicon.ico' }]],
   themeConfig: {
@@ -27,6 +35,10 @@ export default defineConfig({
     },
     outline: { level: [2, 3], label: '本文目录' },
     docFooter: { prev: '上一篇', next: '下一篇' },
+    lastUpdated: {
+      text: '最后更新',
+      formatOptions: { dateStyle: 'medium', timeZone: 'Asia/Shanghai', forceLocale: true },
+    },
     sidebarMenuLabel: '目录', returnToTopLabel: '返回顶部', darkModeSwitchLabel: '外观',
     socialLinks: [{ icon: 'github', link: 'https://github.com/amosnothing/amosnothing.github.io' }],
     search: { provider: 'local', options: { locales: { root: { translations: {
